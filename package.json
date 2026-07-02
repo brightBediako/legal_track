@@ -1,0 +1,15 @@
+{
+  "name": "black-law-consult",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "website",
+    "app",
+    "backend"
+  ],
+  "scripts": {
+    "dev:website": "npm run dev --workspace website",
+    "dev:app": "npm run dev --workspace app",
+    "dev:backend": "npm run dev --workspace backend"
+  }
+}
