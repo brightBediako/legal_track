@@ -16,6 +16,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../common/enums/role.enum';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { assertAllowedDocumentFile } from '../../documents/allowed-file-types';
 import { DocumentsService } from './documents.service';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 
@@ -41,6 +42,8 @@ export class DocumentsController {
     if (!file) {
       return { message: 'file is required' };
     }
+
+    assertAllowedDocumentFile(file.originalname, file.mimetype);
 
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'legal-track-'));
     const tmpPath = path.join(tmpDir, file.originalname);

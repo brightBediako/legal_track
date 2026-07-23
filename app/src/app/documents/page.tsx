@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AppShell } from '../../components/layout/AppShell';
-import { apiGet } from '../../lib/api';
+import { apiGet, apiGetBlob } from '../../lib/api';
 import { useAuthStore } from '../../store/auth.store';
 
 type DocumentItem = {
@@ -16,6 +16,8 @@ type DocumentItem = {
 
 type AccessResponse = {
   url: string;
+  provider?: string;
+  requiresAuth?: boolean;
   expiresInSeconds?: number;
 };
 
@@ -54,6 +56,15 @@ export default function DocumentsPage() {
       if (!access.url) {
         throw new Error('Access URL was not returned');
       }
+
+      if (access.requiresAuth || access.provider === 'local') {
+        const blob = await apiGetBlob(access.url);
+        const objectUrl = URL.createObjectURL(blob);
+        window.open(objectUrl, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        return;
+      }
+
       window.open(access.url, '_blank', 'noopener,noreferrer');
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Failed to open document');

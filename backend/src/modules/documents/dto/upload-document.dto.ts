@@ -1,5 +1,5 @@
 export type UploadDocumentDto = {
-  provider?: 'cloudinary' | 's3';
+  provider?: 'local' | 'cloudinary' | 's3';
   caseId?: string;
 };
 

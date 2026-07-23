@@ -54,6 +54,27 @@ export async function apiGet<TResponse>(path: string): Promise<TResponse> {
   return parseResponse<TResponse>(res);
 }
 
+export async function apiGetBlob(urlOrPath: string): Promise<Blob> {
+  const url = urlOrPath.startsWith('http') ? urlOrPath : `${getBaseUrl()}${urlOrPath}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: buildHeaders(undefined, { auth: true }),
+  });
+
+  if (!res.ok) {
+    let message = `Request failed (${res.status})`;
+    try {
+      const data = (await res.json()) as ApiError;
+      if (typeof data?.message === 'string') message = data.message;
+    } catch {
+      // ignore non-JSON error bodies
+    }
+    throw new Error(message);
+  }
+
+  return res.blob();
+}
+
 export async function apiPost<TResponse>(
   path: string,
   body: unknown,
@@ -62,6 +83,15 @@ export async function apiPost<TResponse>(
   const res = await fetch(`${getBaseUrl()}${path}`, {
     method: 'POST',
     headers: buildHeaders(undefined, { json: true, auth: options?.auth ?? true }),
+    body: JSON.stringify(body),
+  });
+  return parseResponse<TResponse>(res);
+}
+
+export async function apiPatch<TResponse>(path: string, body: unknown): Promise<TResponse> {
+  const res = await fetch(`${getBaseUrl()}${path}`, {
+    method: 'PATCH',
+    headers: buildHeaders(undefined, { json: true, auth: true }),
     body: JSON.stringify(body),
   });
   return parseResponse<TResponse>(res);

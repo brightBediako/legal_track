@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AppShell } from '../../components/layout/AppShell';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../store/auth.store';
@@ -10,13 +11,19 @@ type CaseItem = {
   title: string;
   description?: string | null;
   status: string;
+  courtDate?: string | null;
   clientId?: string | null;
+  client?: { id: string; name: string } | null;
   createdAt: string;
 };
 
 export default function CasesPage() {
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
+  const searchParams = useSearchParams();
+  const initialStatus = searchParams.get('status') ?? '';
   const [cases, setCases] = useState<CaseItem[]>([]);
+  const [q, setQ] = useState('');
+  const [status, setStatus] = useState(initialStatus);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,10 +32,19 @@ export default function CasesPage() {
   }, [hydrate]);
 
   useEffect(() => {
+    setStatus(initialStatus);
+  }, [initialStatus]);
+
+  useEffect(() => {
     async function run() {
       try {
+        setLoading(true);
         setError(null);
-        const data = await apiGet<CaseItem[]>('/cases');
+        const params = new URLSearchParams();
+        if (q.trim()) params.set('q', q.trim());
+        if (status) params.set('status', status);
+        const qs = params.toString();
+        const data = await apiGet<CaseItem[]>(`/cases${qs ? `?${qs}` : ''}`);
         setCases(data);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load cases');
@@ -36,8 +52,9 @@ export default function CasesPage() {
         setLoading(false);
       }
     }
-    run();
-  }, []);
+    const timer = window.setTimeout(run, 200);
+    return () => window.clearTimeout(timer);
+  }, [q, status]);
 
   return (
     <AppShell
@@ -54,6 +71,27 @@ export default function CasesPage() {
         </div>
       }
     >
+      <div className="mb-4 grid max-w-2xl gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Search</span>
+          <input
+            className="app-input"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Title, notes, or client"
+          />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Status</span>
+          <select className="app-select" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="">All</option>
+            <option value="open">Open</option>
+            <option value="pending">Pending</option>
+            <option value="closed">Closed</option>
+          </select>
+        </label>
+      </div>
+
       {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
 
       {error ? (
@@ -69,21 +107,40 @@ export default function CasesPage() {
               <th className="px-4 py-3 font-medium">Title</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Client</th>
+              <th className="px-4 py-3 font-medium">Court date</th>
             </tr>
           </thead>
           <tbody className="text-sm">
-            {cases.length === 0 ? (
+            {!loading && cases.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-zinc-600" colSpan={3}>
+                <td className="px-4 py-3 text-zinc-600" colSpan={4}>
                   No cases yet.
                 </td>
               </tr>
             ) : (
               cases.map((c) => (
                 <tr key={c.id} className="border-t border-zinc-200">
-                  <td className="px-4 py-3 font-medium">{c.title}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <a className="text-zinc-900 underline-offset-2 hover:underline" href={`/cases/${c.id}`}>
+                      {c.title}
+                    </a>
+                  </td>
                   <td className="px-4 py-3 text-zinc-700">{c.status}</td>
-                  <td className="px-4 py-3 text-zinc-700">{c.clientId ?? '—'}</td>
+                  <td className="px-4 py-3 text-zinc-700">
+                    {c.client ? (
+                      <a
+                        href={`/clients/${c.client.id}`}
+                        className="underline-offset-2 hover:underline"
+                      >
+                        {c.client.name}
+                      </a>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-zinc-700">
+                    {c.courtDate ? new Date(c.courtDate).toLocaleDateString() : '—'}
+                  </td>
                 </tr>
               ))
             )}

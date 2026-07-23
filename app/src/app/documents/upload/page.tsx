@@ -18,12 +18,37 @@ type DocumentResponse = {
   caseId?: string | null;
 };
 
+type Provider = 'local' | 'cloudinary' | 's3';
+
+const ALLOWED_EXTENSIONS = [
+  'png',
+  'jpeg',
+  'jpg',
+  'docx',
+  'doc',
+  'pdf',
+  'mp3',
+  'mp4',
+] as const;
+
+const ALLOWED_ACCEPT = '.png,.jpeg,.jpg,.docx,.doc,.pdf,.mp3,.mp4';
+
+function getExtension(filename: string): string {
+  const parts = filename.toLowerCase().split('.');
+  return parts.length > 1 ? (parts.pop() ?? '') : '';
+}
+
+function isAllowedFile(filename: string): boolean {
+  const ext = getExtension(filename);
+  return (ALLOWED_EXTENSIONS as readonly string[]).includes(ext);
+}
+
 export default function UploadDocumentPage() {
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [loadingCases, setLoadingCases] = useState(true);
   const [file, setFile] = useState<File | null>(null);
-  const [provider, setProvider] = useState<'cloudinary' | 's3'>('cloudinary');
+  const [provider, setProvider] = useState<Provider>('local');
   const [caseId, setCaseId] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +72,19 @@ export default function UploadDocumentPage() {
     loadCases();
   }, []);
 
+  function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setError(null);
+    setSuccess(null);
+    const next = e.target.files?.[0] ?? null;
+    if (next && !isAllowedFile(next.name)) {
+      setFile(null);
+      e.target.value = '';
+      setError(`Unsupported file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`);
+      return;
+    }
+    setFile(next);
+  }
+
   async function onSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
@@ -54,6 +92,11 @@ export default function UploadDocumentPage() {
 
     if (!file) {
       setError('Please choose a file to upload.');
+      return;
+    }
+
+    if (!isAllowedFile(file.name)) {
+      setError(`Unsupported file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`);
       return;
     }
 
@@ -77,7 +120,7 @@ export default function UploadDocumentPage() {
   return (
     <AppShell
       title="Upload document"
-      subtitle="Store files using configured providers"
+      subtitle="Local upload for testing (Cloudinary/S3 optional)"
       actions={
         <div className="flex items-center gap-2">
           <a className="app-btn-muted" href="/documents">
@@ -101,10 +144,14 @@ export default function UploadDocumentPage() {
           <input
             type="file"
             name="file"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            accept={ALLOWED_ACCEPT}
+            onChange={onFileChange}
             className="text-sm"
             required
           />
+          <span className="text-xs text-zinc-500">
+            Allowed: png, jpeg, jpg, docx, doc, pdf, mp3, mp4
+          </span>
         </label>
 
         <label className="flex flex-col gap-2">
@@ -112,9 +159,10 @@ export default function UploadDocumentPage() {
           <select
             name="provider"
             value={provider}
-            onChange={(e) => setProvider(e.target.value as 'cloudinary' | 's3')}
+            onChange={(e) => setProvider(e.target.value as Provider)}
             className="app-select"
           >
+            <option value="local">Local (/upload)</option>
             <option value="cloudinary">Cloudinary</option>
             <option value="s3">S3</option>
           </select>

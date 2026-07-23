@@ -56,20 +56,26 @@ export default function NewCasePage() {
       const descriptionRaw = form.get('description');
       const statusRaw = form.get('status');
       const clientIdRaw = form.get('clientId');
+      const notesRaw = form.get('notes');
+      const courtDateRaw = form.get('courtDate');
 
       const title = typeof titleRaw === 'string' ? titleRaw : '';
       const description = typeof descriptionRaw === 'string' ? descriptionRaw : '';
       const status = typeof statusRaw === 'string' ? statusRaw : '';
       const clientId = typeof clientIdRaw === 'string' ? clientIdRaw : '';
+      const notes = typeof notesRaw === 'string' ? notesRaw : '';
+      const courtDate = typeof courtDateRaw === 'string' ? courtDateRaw : '';
 
-      await apiPost<CaseItem>('/cases', {
+      const created = await apiPost<CaseItem>('/cases', {
         title,
         description: description || undefined,
         status,
         clientId: clientId || undefined,
+        notes: notes || undefined,
+        courtDate: courtDate || undefined,
       });
 
-      router.push('/cases');
+      router.push(`/cases/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create case');
     } finally {
@@ -107,7 +113,21 @@ export default function NewCasePage() {
 
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">Status</span>
-          <input name="status" className="app-input" placeholder="open" required />
+          <select name="status" className="app-select" defaultValue="open" required>
+            <option value="open">Open</option>
+            <option value="pending">Pending</option>
+            <option value="closed">Closed</option>
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Court date (optional)</span>
+          <input type="date" name="courtDate" className="app-input" />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Notes (optional)</span>
+          <textarea name="notes" className="app-textarea" placeholder="Initial notes" />
         </label>
 
         <label className="flex flex-col gap-2">

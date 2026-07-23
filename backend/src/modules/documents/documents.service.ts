@@ -1,13 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CloudinaryService } from '../../documents/cloudinary.service';
+import { LocalStorageService } from '../../documents/local-storage.service';
 import { S3Service } from '../../documents/s3.service';
 import { AuditService } from '../audit/audit.service';
+
+type DocumentProvider = 'local' | 'cloudinary' | 's3';
 
 @Injectable()
 export class DocumentsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly localStorage: LocalStorageService,
     private readonly cloudinary: CloudinaryService,
     private readonly s3: S3Service,
     private readonly audit: AuditService,
@@ -33,22 +37,26 @@ export class DocumentsService {
     input: {
       filePath: string;
       originalName: string;
-      provider?: 'cloudinary' | 's3';
+      provider?: DocumentProvider;
       caseId?: string;
     },
     actorUserId?: string,
   ) {
-    const provider = input.provider || 'cloudinary';
+    const provider: DocumentProvider = input.provider || 'local';
     const caseId = input.caseId?.trim() || undefined;
 
-    if (provider !== 'cloudinary' && provider !== 's3') {
-      throw new BadRequestException('provider must be cloudinary or s3');
+    if (provider !== 'local' && provider !== 'cloudinary' && provider !== 's3') {
+      throw new BadRequestException('provider must be local, cloudinary, or s3');
     }
 
     let url: string;
     let providerKey: string | undefined;
 
-    if (provider === 'cloudinary') {
+    if (provider === 'local') {
+      const res = await this.localStorage.storeLocalFile(input.filePath, input.originalName);
+      url = res.url;
+      providerKey = res.key;
+    } else if (provider === 'cloudinary') {
       const res = await this.cloudinary.uploadLocalFile(input.filePath, 'documents');
       url = res.secure_url || res.url;
       providerKey = res.public_id;

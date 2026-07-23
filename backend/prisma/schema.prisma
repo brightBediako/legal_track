@@ -28,10 +28,11 @@ model User {
 }
 
 model Client {
-  id    String @id @default(uuid())
-  name  String
-  email String?
-  phone String?
+  id       String  @id @default(uuid())
+  name     String
+  email    String?
+  phone    String?
+  isActive Boolean @default(true)
 
   cases Case[]
 
@@ -40,10 +41,12 @@ model Client {
 }
 
 model Case {
-  id          String @id @default(uuid())
+  id          String    @id @default(uuid())
   title       String
   description String?
   status      String
+  notes       String?
+  courtDate   DateTime?
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id])

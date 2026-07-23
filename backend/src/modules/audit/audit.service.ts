@@ -48,4 +48,49 @@ export class AuditService {
   logDelete(entity: string, entityId: string | undefined, userId?: string, metadata?: Record<string, unknown>) {
     return this.log({ action: 'delete', entity, entityId, userId, metadata });
   }
+
+  async list(query?: {
+    action?: string;
+    entity?: string;
+    q?: string;
+    limit?: number;
+  }) {
+    const action = query?.action?.trim();
+    const entity = query?.entity?.trim();
+    const q = query?.q?.trim();
+    const take = Math.min(Math.max(query?.limit ?? 100, 1), 500);
+
+    const where: Prisma.AuditLogWhereInput = {};
+    if (action) where.action = action;
+    if (entity) where.entity = entity;
+    if (q) {
+      where.OR = [
+        { action: { contains: q, mode: 'insensitive' } },
+        { entity: { contains: q, mode: 'insensitive' } },
+        { entityId: { contains: q, mode: 'insensitive' } },
+        { userId: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    const rows = await this.prisma.auditLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take,
+    });
+
+    const userIds = [...new Set(rows.map((r) => r.userId).filter(Boolean))] as string[];
+    const users =
+      userIds.length > 0
+        ? await this.prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, email: true, role: true },
+          })
+        : [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    return rows.map((row) => ({
+      ...row,
+      user: row.userId ? userMap.get(row.userId) ?? null : null,
+    }));
+  }
 }

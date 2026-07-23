@@ -38,13 +38,13 @@ export default function NewClientPage() {
       const email = typeof emailRaw === 'string' ? emailRaw : '';
       const phone = typeof phoneRaw === 'string' ? phoneRaw : '';
 
-      await apiPost<Client>('/clients', {
+      const created = await apiPost<Client>('/clients', {
         name,
         email: email || undefined,
         phone: phone || undefined,
       });
 
-      router.push('/clients');
+      router.push(`/clients/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create client');
     } finally {

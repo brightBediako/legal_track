@@ -2,20 +2,25 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode, SVGProps } from 'react';
+import { useAuthStore } from '../../store/auth.store';
 
 type NavItem = {
   href: string;
   label: string;
   icon: (props: Readonly<IconProps>) => ReactNode;
+  adminOnly?: boolean;
 };
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
   { href: '/clients', label: 'Clients', icon: ClientsIcon },
   { href: '/cases', label: 'Cases', icon: CasesIcon },
   { href: '/documents', label: 'Documents', icon: DocumentsIcon },
+  { href: '/users', label: 'Users', icon: UsersIcon, adminOnly: true },
+  { href: '/audit', label: 'Audit', icon: AuditIcon, adminOnly: true },
+  { href: '/account', label: 'Account', icon: AccountIcon },
 ];
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -56,11 +61,41 @@ function DocumentsIcon(props: Readonly<IconProps>) {
   );
 }
 
+function UsersIcon(props: Readonly<IconProps>) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
+      <circle cx="10" cy="6.5" r="2.75" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M4 16.25a6 6 0 0 1 12 0" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function AuditIcon(props: Readonly<IconProps>) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
+      <path d="M4.5 3.75h11v12.5h-11V3.75Z" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M7 7h6M7 10h6M7 13h3.5" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function AccountIcon(props: Readonly<IconProps>) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
+      <circle cx="10" cy="10" r="7.25" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10 6.5v4l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 const breadcrumbLabels: Record<string, string> = {
   dashboard: 'Dashboard',
   clients: 'Clients',
   cases: 'Cases',
   documents: 'Documents',
+  users: 'Users',
+  audit: 'Audit',
+  account: 'Account',
   upload: 'Upload',
   new: 'New',
   login: 'Login',
@@ -75,9 +110,21 @@ type AppShellProps = {
 
 export function AppShell({ title, subtitle, actions, children }: Readonly<AppShellProps>) {
   const pathname = usePathname();
+  const hydrate = useAuthStore((s) => s.hydrateFromStorage);
+  const authUser = useAuthStore((s) => s.user);
   const [menuOpen, setMenuOpen] = useState(false);
   const segments = pathname.split('/').filter(Boolean);
   const firstSegment = segments.find(() => true) ?? 'dashboard';
+  const isAdmin = authUser?.role === 'admin';
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  const navItems = useMemo(
+    () => baseNavItems.filter((item) => !item.adminOnly || isAdmin),
+    [isAdmin],
+  );
 
   let pageIcon = <DashboardIcon className="size-4" />;
   if (firstSegment === 'clients') {
@@ -86,13 +133,19 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
     pageIcon = <CasesIcon className="size-4" />;
   } else if (firstSegment === 'documents') {
     pageIcon = <DocumentsIcon className="size-4" />;
+  } else if (firstSegment === 'users') {
+    pageIcon = <UsersIcon className="size-4" />;
+  } else if (firstSegment === 'audit') {
+    pageIcon = <AuditIcon className="size-4" />;
+  } else if (firstSegment === 'account') {
+    pageIcon = <AccountIcon className="size-4" />;
   }
 
   const crumbs = segments.map((segment, idx, arr) => ({
-      href: `/${arr.slice(0, idx + 1).join('/')}`,
-      label: breadcrumbLabels[segment] ?? segment.replaceAll('-', ' '),
-      isLast: idx === arr.length - 1,
-    }));
+    href: `/${arr.slice(0, idx + 1).join('/')}`,
+    label: breadcrumbLabels[segment] ?? segment.replaceAll('-', ' '),
+    isLast: idx === arr.length - 1,
+  }));
 
   return (
     <div className="min-h-screen bg-slate-50 text-zinc-900">
@@ -220,4 +273,3 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
     </div>
   );
 }
-

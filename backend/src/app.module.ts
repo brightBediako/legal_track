@@ -7,6 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { CasesModule } from './modules/cases/cases.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   controllers: [AppController],
@@ -18,6 +19,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
     ClientsModule,
     CasesModule,
     DocumentsModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}
