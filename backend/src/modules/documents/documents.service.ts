@@ -1,9 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { PortalScopeService } from '../../common/portal-scope.service';
 import { PrismaService } from '../../database/prisma.service';
 import { CloudinaryService } from '../../documents/cloudinary.service';
 import { LocalStorageService } from '../../documents/local-storage.service';
 import { S3Service } from '../../documents/s3.service';
 import { AuditService } from '../audit/audit.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 type DocumentProvider = 'local' | 'cloudinary' | 's3';
 
@@ -15,10 +17,18 @@ export class DocumentsService {
     private readonly cloudinary: CloudinaryService,
     private readonly s3: S3Service,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
+    private readonly portal: PortalScopeService,
   ) {}
 
-  async list() {
+  async list(actor?: { userId?: string; role?: string }) {
+    const where =
+      this.portal.isClientRole(actor?.role) && actor?.userId
+        ? { case: { clientId: await this.portal.requireLinkedClientId(actor.userId) } }
+        : {};
+
     return this.prisma.document.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -40,13 +50,26 @@ export class DocumentsService {
       provider?: DocumentProvider;
       caseId?: string;
     },
-    actorUserId?: string,
+    actor?: { userId?: string; role?: string },
   ) {
     const provider: DocumentProvider = input.provider || 'local';
     const caseId = input.caseId?.trim() || undefined;
+    const actorUserId = actor?.userId;
 
     if (provider !== 'local' && provider !== 'cloudinary' && provider !== 's3') {
       throw new BadRequestException('provider must be local, cloudinary, or s3');
+    }
+
+    if (this.portal.isClientRole(actor?.role)) {
+      if (!actorUserId) throw new BadRequestException('unauthorized');
+      if (!caseId) {
+        throw new BadRequestException('clients must upload documents to one of their cases');
+      }
+      await this.portal.assertCaseAccess({
+        userId: actorUserId,
+        role: actor?.role,
+        caseId,
+      });
     }
 
     let url: string;
@@ -82,6 +105,18 @@ export class DocumentsService {
       provider: doc.provider,
       caseId: doc.caseId,
     });
+
+    await this.notifications.notifyStaff(
+      {
+        title: `Document uploaded: ${doc.filename}`,
+        body: doc.caseId ? 'Linked to a case.' : 'No case linked.',
+        type: 'document',
+        entity: 'Document',
+        entityId: doc.id,
+        href: doc.caseId ? `/cases/${doc.caseId}` : '/documents',
+      },
+      { excludeUserId: actorUserId },
+    );
 
     return doc;
   }

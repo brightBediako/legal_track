@@ -10,8 +10,15 @@ type UserDetail = {
   id: string;
   email: string;
   role: string;
+  clientId?: string | null;
   createdAt: string;
   updatedAt: string;
+  client?: { id: string; name: string; email?: string | null } | null;
+};
+
+type ClientOption = {
+  id: string;
+  name: string;
 };
 
 export default function UserDetailPage() {
@@ -22,8 +29,10 @@ export default function UserDetailPage() {
   const isAdmin = authUser?.role === 'admin';
 
   const [item, setItem] = useState<UserDetail | null>(null);
+  const [clients, setClients] = useState<ClientOption[]>([]);
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('clerk');
+  const [clientId, setClientId] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,10 +53,15 @@ export default function UserDetailPage() {
       try {
         setLoading(true);
         setError(null);
-        const data = await apiGet<UserDetail>(`/users/${id}`);
+        const [data, clientList] = await Promise.all([
+          apiGet<UserDetail>(`/users/${id}`),
+          apiGet<ClientOption[]>('/clients'),
+        ]);
         setItem(data);
+        setClients(clientList);
         setEmail(data.email);
         setRole(data.role);
+        setClientId(data.clientId ?? '');
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load user');
       } finally {
@@ -60,14 +74,28 @@ export default function UserDetailPage() {
   async function onSave(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!isAdmin) return;
+    if (role === 'client' && !clientId) {
+      setError('Client role requires a linked client profile.');
+      return;
+    }
     setSaving(true);
     setError(null);
     setSuccess(null);
     try {
-      const body: { email: string; role: string; password?: string } = { email, role };
+      const body: {
+        email: string;
+        role: string;
+        password?: string;
+        clientId?: string | null;
+      } = {
+        email,
+        role,
+        clientId: role === 'client' ? clientId : null,
+      };
       if (password.trim()) body.password = password.trim();
       const updated = await apiPatch<UserDetail>(`/users/${id}`, body);
       setItem(updated);
+      setClientId(updated.clientId ?? '');
       setPassword('');
       setSuccess(password.trim() ? 'User and password updated.' : 'User updated.');
     } catch (err) {
@@ -80,7 +108,7 @@ export default function UserDetailPage() {
   return (
     <AppShell
       title={item?.email ?? 'User'}
-      subtitle="Role assignment and password reset"
+      subtitle="Role assignment, portal link, and password reset"
       actions={
         <a className="app-btn-muted" href="/users">
           Back to users
@@ -125,13 +153,42 @@ export default function UserDetailPage() {
 
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium">Role</span>
-            <select className="app-select" value={role} onChange={(e) => setRole(e.target.value)}>
+            <select
+              className="app-select"
+              value={role}
+              onChange={(e) => {
+                setRole(e.target.value);
+                if (e.target.value !== 'client') setClientId('');
+              }}
+            >
               <option value="admin">Admin</option>
               <option value="lawyer">Lawyer</option>
               <option value="clerk">Clerk</option>
               <option value="client">Client</option>
             </select>
           </label>
+
+          {role === 'client' ? (
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Linked client profile</span>
+              <select
+                className="app-select"
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                required
+              >
+                <option value="">Select client</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              {item.client ? (
+                <span className="text-xs text-zinc-500">Currently linked to {item.client.name}.</span>
+              ) : null}
+            </label>
+          ) : null}
 
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium">Reset password (optional)</span>

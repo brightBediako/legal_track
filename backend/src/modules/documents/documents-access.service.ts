@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { PortalScopeService } from '../../common/portal-scope.service';
 import { PrismaService } from '../../database/prisma.service';
 import { CloudinaryService } from '../../documents/cloudinary.service';
 import { LocalStorageService } from '../../documents/local-storage.service';
@@ -11,6 +12,7 @@ export class DocumentsAccessService {
     private readonly localStorage: LocalStorageService,
     private readonly cloudinary: CloudinaryService,
     private readonly s3: S3Service,
+    private readonly portal: PortalScopeService,
   ) {}
 
   private apiBaseUrl() {
@@ -20,7 +22,18 @@ export class DocumentsAccessService {
     );
   }
 
-  async getSignedAccessUrl(documentId: string) {
+  async getSignedAccessUrl(
+    documentId: string,
+    actor?: { userId?: string; role?: string },
+  ) {
+    if (actor?.userId) {
+      await this.portal.assertDocumentAccess({
+        userId: actor.userId,
+        role: actor.role,
+        documentId,
+      });
+    }
+
     const doc = await this.prisma.document.findUnique({
       where: { id: documentId },
       select: { id: true, provider: true, providerKey: true, url: true },
@@ -54,11 +67,21 @@ export class DocumentsAccessService {
       return { url, provider: 'cloudinary' as const, expiresInSeconds: 600 };
     }
 
-    // Fallback: return stored URL if provider is unknown
     return { url: doc.url };
   }
 
-  async getLocalDownload(documentId: string) {
+  async getLocalDownload(
+    documentId: string,
+    actor?: { userId?: string; role?: string },
+  ) {
+    if (actor?.userId) {
+      await this.portal.assertDocumentAccess({
+        userId: actor.userId,
+        role: actor.role,
+        documentId,
+      });
+    }
+
     const doc = await this.prisma.document.findUnique({
       where: { id: documentId },
       select: { id: true, filename: true, provider: true, providerKey: true },
@@ -76,4 +99,3 @@ export class DocumentsAccessService {
     return { absolutePath, filename: doc.filename };
   }
 }
-

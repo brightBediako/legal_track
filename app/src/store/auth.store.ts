@@ -4,6 +4,7 @@ export type AuthUser = {
   id: string;
   email: string;
   role: string;
+  clientId?: string | null;
 };
 
 type AuthState = {

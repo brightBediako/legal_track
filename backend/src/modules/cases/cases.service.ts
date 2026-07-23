@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { PortalScopeService } from '../../common/portal-scope.service';
 import { PrismaService } from '../../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const CASE_STATUSES = ['open', 'pending', 'closed'] as const;
 
@@ -10,6 +12,8 @@ export class CasesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
+    private readonly portal: PortalScopeService,
   ) {}
 
   async create(
@@ -56,10 +60,25 @@ export class CasesService {
       clientId: created.clientId,
     });
 
+    await this.notifications.notifyStaff(
+      {
+        title: `New case: ${created.title}`,
+        body: `Status set to ${created.status}.`,
+        type: 'case_update',
+        entity: 'Case',
+        entityId: created.id,
+        href: `/cases/${created.id}`,
+      },
+      { excludeUserId: actorUserId },
+    );
+
     return created;
   }
 
-  async list(query?: { q?: string; status?: string }) {
+  async list(
+    query?: { q?: string; status?: string },
+    actor?: { userId?: string; role?: string },
+  ) {
     const q = query?.q?.trim();
     const status = query?.status?.trim();
 
@@ -76,6 +95,10 @@ export class CasesService {
       ];
     }
 
+    if (this.portal.isClientRole(actor?.role) && actor?.userId) {
+      where.clientId = await this.portal.requireLinkedClientId(actor.userId);
+    }
+
     return this.prisma.case.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -87,7 +110,15 @@ export class CasesService {
     });
   }
 
-  async getById(id: string) {
+  async getById(id: string, actor?: { userId?: string; role?: string }) {
+    if (actor?.userId) {
+      await this.portal.assertCaseAccess({
+        userId: actor.userId,
+        role: actor.role,
+        caseId: id,
+      });
+    }
+
     const item = await this.prisma.case.findUnique({
       where: { id },
       include: {
@@ -192,6 +223,18 @@ export class CasesService {
       status: updated.status,
       fields: Object.keys(data),
     });
+
+    await this.notifications.notifyStaff(
+      {
+        title: `Case updated: ${updated.title}`,
+        body: `Status: ${updated.status}.`,
+        type: 'case_update',
+        entity: 'Case',
+        entityId: updated.id,
+        href: `/cases/${updated.id}`,
+      },
+      { excludeUserId: actorUserId },
+    );
 
     return updated;
   }

@@ -47,6 +47,10 @@ export default function CaseDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
+  const user = useAuthStore((s) => s.user);
+  const isClient = user?.role === 'client';
+  const canEdit =
+    user?.role === 'admin' || user?.role === 'lawyer' || user?.role === 'clerk';
 
   const [item, setItem] = useState<CaseDetail | null>(null);
   const [clients, setClients] = useState<ClientOption[]>([]);
@@ -70,12 +74,8 @@ export default function CaseDetailPage() {
       try {
         setLoading(true);
         setError(null);
-        const [data, clientList] = await Promise.all([
-          apiGet<CaseDetail>(`/cases/${id}`),
-          apiGet<ClientOption[]>('/clients'),
-        ]);
+        const data = await apiGet<CaseDetail>(`/cases/${id}`);
         setItem(data);
-        setClients(clientList);
         setTitle(data.title);
         setDescription(data.description ?? '');
         {
@@ -85,17 +85,23 @@ export default function CaseDetailPage() {
         setNotes(data.notes ?? '');
         setCourtDate(toDateInputValue(data.courtDate));
         setClientId(data.clientId ?? '');
+
+        if (canEdit) {
+          const clientList = await apiGet<ClientOption[]>('/clients');
+          setClients(clientList);
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load case');
       } finally {
         setLoading(false);
       }
     }
-    if (id) load();
-  }, [id]);
+    if (id && user) load();
+  }, [id, user, canEdit]);
 
   async function onSave(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!canEdit) return;
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -120,7 +126,7 @@ export default function CaseDetailPage() {
   return (
     <AppShell
       title={item?.title ?? 'Case'}
-      subtitle="Status, notes, court date, and documents"
+      subtitle={canEdit ? 'Status, notes, court date, and documents' : 'Case details and documents'}
       actions={
         <div className="flex items-center gap-2">
           <a className="app-btn-muted" href="/cases">
@@ -148,94 +154,122 @@ export default function CaseDetailPage() {
 
       {item ? (
         <div className="grid gap-6 lg:grid-cols-2">
-          <form
-            onSubmit={onSave}
-            className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
-          >
-            <h2 className="text-sm font-semibold text-zinc-900">Edit case</h2>
+          {canEdit ? (
+            <form
+              onSubmit={onSave}
+              className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+            >
+              <h2 className="text-sm font-semibold text-zinc-900">Edit case</h2>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Title</span>
-              <input className="app-input" value={title} onChange={(e) => setTitle(e.target.value)} required />
-            </label>
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Title</span>
+                <input className="app-input" value={title} onChange={(e) => setTitle(e.target.value)} required />
+              </label>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Description</span>
-              <textarea
-                className="app-textarea"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </label>
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Description</span>
+                <textarea
+                  className="app-textarea"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </label>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Status</span>
-              <select className="app-select" value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="open">Open</option>
-                <option value="pending">Pending</option>
-                <option value="closed">Closed</option>
-              </select>
-            </label>
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Status</span>
+                <select className="app-select" value={status} onChange={(e) => setStatus(e.target.value)}>
+                  <option value="open">Open</option>
+                  <option value="pending">Pending</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </label>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Court date</span>
-              <input
-                type="date"
-                className="app-input"
-                value={courtDate}
-                onChange={(e) => setCourtDate(e.target.value)}
-              />
-            </label>
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Court date</span>
+                <input
+                  type="date"
+                  className="app-input"
+                  value={courtDate}
+                  onChange={(e) => setCourtDate(e.target.value)}
+                />
+              </label>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Notes</span>
-              <textarea
-                className="app-textarea"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Case notes / progress"
-              />
-            </label>
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Notes</span>
+                <textarea
+                  className="app-textarea"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Case notes / progress"
+                />
+              </label>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Client</span>
-              <select
-                className="app-select"
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-              >
-                <option value="">No client</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium">Client</span>
+                <select
+                  className="app-select"
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                >
+                  <option value="">No client</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <button type="submit" disabled={saving} className="app-btn-primary mt-2">
-              {saving ? 'Saving…' : 'Save changes'}
-            </button>
-          </form>
+              <button type="submit" disabled={saving} className="app-btn-primary mt-2">
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+            </form>
+          ) : (
+            <div className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <h2 className="text-sm font-semibold text-zinc-900">Case details</h2>
+              <dl className="space-y-3 text-sm">
+                <div>
+                  <dt className="text-zinc-500">Status</dt>
+                  <dd className="font-medium text-zinc-900">{item.status}</dd>
+                </div>
+                <div>
+                  <dt className="text-zinc-500">Court date</dt>
+                  <dd className="text-zinc-900">
+                    {item.courtDate ? new Date(item.courtDate).toLocaleDateString() : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-zinc-500">Description</dt>
+                  <dd className="whitespace-pre-wrap text-zinc-900">{item.description || '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-zinc-500">Notes</dt>
+                  <dd className="whitespace-pre-wrap text-zinc-900">{item.notes || '—'}</dd>
+                </div>
+              </dl>
+            </div>
+          )}
 
           <div className="flex flex-col gap-6">
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-3 text-sm font-semibold text-zinc-900">Client</h2>
-              {item.client ? (
-                <div className="text-sm text-zinc-700">
-                  <a
-                    href={`/clients/${item.client.id}`}
-                    className="font-medium text-zinc-900 underline-offset-2 hover:underline"
-                  >
-                    {item.client.name}
-                  </a>
-                  <p className="mt-1">{item.client.email ?? 'No email'}</p>
-                  <p>{item.client.phone ?? 'No phone'}</p>
-                </div>
-              ) : (
-                <p className="text-sm text-zinc-600">No client linked.</p>
-              )}
-            </div>
+            {!isClient ? (
+              <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-3 text-sm font-semibold text-zinc-900">Client</h2>
+                {item.client ? (
+                  <div className="text-sm text-zinc-700">
+                    <a
+                      href={`/clients/${item.client.id}`}
+                      className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                    >
+                      {item.client.name}
+                    </a>
+                    <p className="mt-1">{item.client.email ?? 'No email'}</p>
+                    <p>{item.client.phone ?? 'No phone'}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-600">No client linked.</p>
+                )}
+              </div>
+            ) : null}
 
             <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
               <h2 className="mb-3 text-sm font-semibold text-zinc-900">Documents</h2>

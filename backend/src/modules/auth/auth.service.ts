@@ -22,7 +22,7 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, password: true, role: true },
+      select: { id: true, email: true, password: true, role: true, clientId: true },
     });
 
     if (!user) {
@@ -50,6 +50,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      clientId: user.clientId ?? undefined,
     });
 
     await this.audit.log({
@@ -57,9 +58,17 @@ export class AuthService {
       entity: 'User',
       entityId: user.id,
       userId: user.id,
-      metadata: { email: user.email, role: user.role },
+      metadata: { email: user.email, role: user.role, clientId: user.clientId },
     });
 
-    return { accessToken, user: { id: user.id, email: user.email, role: user.role } };
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        clientId: user.clientId,
+      },
+    };
   }
 }

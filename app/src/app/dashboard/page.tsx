@@ -6,6 +6,7 @@ import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../store/auth.store';
 
 type DashboardSummary = {
+  scope?: 'staff' | 'client';
   metrics: {
     clientsActive: number;
     clientsInactive: number;
@@ -35,6 +36,13 @@ type DashboardSummary = {
     status: string;
     updatedAt: string;
     client?: { id: string; name: string } | null;
+  }>;
+  upcomingAppointments?: Array<{
+    id: string;
+    title: string;
+    type: string;
+    startsAt: string;
+    status: string;
   }>;
 };
 
@@ -70,13 +78,15 @@ export default function DashboardPage() {
   const [search, setSearch] = useState<SearchResult | null>(null);
 
   const isStaff = user?.role === 'admin' || user?.role === 'lawyer' || user?.role === 'clerk';
+  const isClient = user?.role === 'client';
+  const canView = isStaff || isClient;
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
   useEffect(() => {
-    if (!isStaff) {
+    if (!canView) {
       setLoading(false);
       setSummary(null);
       return;
@@ -95,10 +105,10 @@ export default function DashboardPage() {
       }
     }
     load();
-  }, [isStaff]);
+  }, [canView]);
 
   useEffect(() => {
-    if (!isStaff) return;
+    if (!canView) return;
     const term = q.trim();
     if (!term) {
       setSearch(null);
@@ -122,12 +132,12 @@ export default function DashboardPage() {
 
     const timer = window.setTimeout(run, 250);
     return () => window.clearTimeout(timer);
-  }, [q, isStaff]);
+  }, [q, canView]);
 
   return (
     <AppShell
       title="Dashboard"
-      subtitle="What needs attention today"
+      subtitle={isClient ? 'Your cases, documents, and upcoming dates' : 'What needs attention today'}
       actions={
         user ? (
           <button type="button" onClick={clear} className="app-btn-muted">
@@ -146,38 +156,25 @@ export default function DashboardPage() {
         </p>
       ) : null}
 
-      {user && !isStaff ? (
-        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <p className="text-sm text-zinc-700">
-            Signed in as <span className="font-medium">{user.email}</span> ({user.role}).
-          </p>
-          <p className="mt-2 text-sm text-zinc-600">
-            Firm-wide metrics are available to staff. Client portal views come next.
-          </p>
-          <div className="mt-4 flex gap-2">
-            <a className="app-btn-muted h-10 px-4" href="/documents/upload">
-              Upload document
-            </a>
-            <a className="app-btn-muted h-10 px-4" href="/account">
-              Account
-            </a>
-          </div>
-        </section>
-      ) : null}
-
-      {isStaff ? (
+      {canView ? (
         <div className="flex flex-col gap-6">
           <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
             <p className="mb-3 text-sm text-zinc-700">
               Signed in as <span className="font-medium">{user?.email}</span> ({user?.role}).
             </p>
             <label className="flex max-w-xl flex-col gap-2">
-              <span className="text-sm font-medium">Search clients and cases</span>
+              <span className="text-sm font-medium">
+                {isClient ? 'Search your cases' : 'Search clients and cases'}
+              </span>
               <input
                 className="app-input"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Type a name, email, title, or notes…"
+                placeholder={
+                  isClient
+                    ? 'Type a case title or notes…'
+                    : 'Type a name, email, title, or notes…'
+                }
               />
             </label>
 
@@ -189,29 +186,31 @@ export default function DashboardPage() {
             ) : null}
 
             {search ? (
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                <div>
-                  <h2 className="mb-2 text-sm font-semibold text-zinc-900">Clients</h2>
-                  {search.clients.length === 0 ? (
-                    <p className="text-sm text-zinc-600">No matching clients.</p>
-                  ) : (
-                    <ul className="space-y-2 text-sm">
-                      {search.clients.map((c) => (
-                        <li key={c.id}>
-                          <a
-                            href={`/clients/${c.id}`}
-                            className="font-medium text-zinc-900 underline-offset-2 hover:underline"
-                          >
-                            {c.name}
-                          </a>
-                          <span className="ml-2 text-zinc-500">
-                            {c.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+              <div className={`mt-4 grid gap-4 ${isStaff ? 'lg:grid-cols-2' : ''}`}>
+                {isStaff ? (
+                  <div>
+                    <h2 className="mb-2 text-sm font-semibold text-zinc-900">Clients</h2>
+                    {search.clients.length === 0 ? (
+                      <p className="text-sm text-zinc-600">No matching clients.</p>
+                    ) : (
+                      <ul className="space-y-2 text-sm">
+                        {search.clients.map((c) => (
+                          <li key={c.id}>
+                            <a
+                              href={`/clients/${c.id}`}
+                              className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                            >
+                              {c.name}
+                            </a>
+                            <span className="ml-2 text-zinc-500">
+                              {c.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ) : null}
                 <div>
                   <h2 className="mb-2 text-sm font-semibold text-zinc-900">Cases</h2>
                   {search.cases.length === 0 ? (
@@ -247,8 +246,12 @@ export default function DashboardPage() {
             <>
               <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <MetricCard label="Open cases" value={summary.metrics.casesOpen} href="/cases?status=open" />
-                <MetricCard label="Pending cases" value={summary.metrics.casesPending} href="/cases" />
-                <MetricCard label="Active clients" value={summary.metrics.clientsActive} href="/clients" />
+                <MetricCard label="Pending cases" value={summary.metrics.casesPending} href="/cases?status=pending" />
+                {isStaff ? (
+                  <MetricCard label="Active clients" value={summary.metrics.clientsActive} href="/clients" />
+                ) : (
+                  <MetricCard label="Closed cases" value={summary.metrics.casesClosed} href="/cases?status=closed" />
+                )}
                 <MetricCard label="Documents" value={summary.metrics.documentsTotal} href="/documents" />
               </section>
 
@@ -274,7 +277,7 @@ export default function DashboardPage() {
                           </a>
                           <p className="mt-1 text-xs text-zinc-500">
                             {c.courtDate ? new Date(c.courtDate).toLocaleDateString() : '—'}
-                            {c.client ? ` · ${c.client.name}` : ''}
+                            {isStaff && c.client ? ` · ${c.client.name}` : ''}
                           </p>
                         </li>
                       ))}
@@ -283,6 +286,67 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold text-zinc-900">
+                      {isClient ? 'Upcoming appointments' : 'Recent documents'}
+                    </h2>
+                    <a
+                      className="text-xs text-zinc-500 underline-offset-2 hover:underline"
+                      href={isClient ? '/appointments' : '/documents'}
+                    >
+                      {isClient ? 'All appointments' : 'All documents'}
+                    </a>
+                  </div>
+                  {isClient ? (
+                    !summary.upcomingAppointments || summary.upcomingAppointments.length === 0 ? (
+                      <p className="text-sm text-zinc-600">No upcoming appointments.</p>
+                    ) : (
+                      <ul className="space-y-3 text-sm">
+                        {summary.upcomingAppointments.map((a) => (
+                          <li key={a.id} className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0">
+                            <a
+                              href={`/appointments/${a.id}`}
+                              className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                            >
+                              {a.title}
+                            </a>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {new Date(a.startsAt).toLocaleString()} · {a.type}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    )
+                  ) : summary.recentDocuments.length === 0 ? (
+                    <p className="text-sm text-zinc-600">No documents yet.</p>
+                  ) : (
+                    <ul className="space-y-3 text-sm">
+                      {summary.recentDocuments.map((d) => (
+                        <li key={d.id} className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0">
+                          <span className="font-medium text-zinc-900">{d.filename}</span>
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {new Date(d.createdAt).toLocaleString()}
+                            {d.case ? (
+                              <>
+                                {' · '}
+                                <a
+                                  href={`/cases/${d.case.id}`}
+                                  className="underline-offset-2 hover:underline"
+                                >
+                                  {d.case.title}
+                                </a>
+                              </>
+                            ) : null}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </section>
+
+              {isClient ? (
+                <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-sm font-semibold text-zinc-900">Recent documents</h2>
                     <a className="text-xs text-zinc-500 underline-offset-2 hover:underline" href="/documents">
@@ -314,15 +378,21 @@ export default function DashboardPage() {
                       ))}
                     </ul>
                   )}
-                </div>
-              </section>
+                </section>
+              ) : null}
 
               <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-sm font-semibold text-zinc-900">Recently updated cases</h2>
-                  <a className="app-btn-muted h-9 px-3" href="/cases/new">
-                    New case
-                  </a>
+                  {isStaff ? (
+                    <a className="app-btn-muted h-9 px-3" href="/cases/new">
+                      New case
+                    </a>
+                  ) : (
+                    <a className="app-btn-muted h-9 px-3" href="/documents/upload">
+                      Upload document
+                    </a>
+                  )}
                 </div>
                 {summary.recentCases.length === 0 ? (
                   <p className="text-sm text-zinc-600">No cases yet.</p>
@@ -339,7 +409,7 @@ export default function DashboardPage() {
                           </a>
                           <p className="mt-1 text-xs text-zinc-500">
                             {c.status}
-                            {c.client ? ` · ${c.client.name}` : ''}
+                            {isStaff && c.client ? ` · ${c.client.name}` : ''}
                           </p>
                         </div>
                         <span className="text-xs text-zinc-500">

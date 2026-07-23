@@ -10,8 +10,10 @@ const userPublicSelect = {
   id: true,
   email: true,
   role: true,
+  clientId: true,
   createdAt: true,
   updatedAt: true,
+  client: { select: { id: true, name: true, email: true } },
 } as const;
 
 @Injectable()
@@ -51,7 +53,7 @@ export class UsersService {
   }
 
   async create(
-    input: { email: string; password: string; role: string },
+    input: { email: string; password: string; role: string; clientId?: string | null },
     actorUserId?: string,
   ) {
     const email = this.normalizeEmail(input.email);
@@ -67,15 +69,22 @@ export class UsersService {
       throw new BadRequestException('email is already registered');
     }
 
+    const clientId = await this.resolveClientLink(role, input.clientId);
     const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const user = await this.prisma.user.create({
-      data: { email, password: hash, role },
+      data: {
+        email,
+        password: hash,
+        role,
+        client: clientId ? { connect: { id: clientId } } : undefined,
+      },
       select: userPublicSelect,
     });
 
     await this.audit.logCreate('User', user.id, actorUserId, {
       email: user.email,
       role: user.role,
+      clientId: user.clientId,
     });
 
     return user;
@@ -83,13 +92,19 @@ export class UsersService {
 
   async update(
     id: string,
-    input: { email?: string; role?: string; password?: string },
+    input: {
+      email?: string;
+      role?: string;
+      password?: string;
+      clientId?: string | null;
+    },
     actorUserId?: string,
   ) {
     const existing = await this.prisma.user.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('user not found');
 
     const data: Prisma.UserUpdateInput = {};
+    let nextRole = existing.role;
 
     if (input.email !== undefined) {
       const email = this.normalizeEmail(input.email);
@@ -109,6 +124,7 @@ export class UsersService {
         }
       }
       data.role = role;
+      nextRole = role;
     }
 
     if (input.password !== undefined) {
@@ -116,6 +132,18 @@ export class UsersService {
         throw new BadRequestException('password must be at least 8 characters');
       }
       data.password = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
+    }
+
+    if (input.clientId !== undefined || input.role !== undefined) {
+      const clientId = await this.resolveClientLink(
+        nextRole,
+        input.clientId !== undefined ? input.clientId : existing.clientId,
+      );
+      if (!clientId) {
+        data.client = { disconnect: true };
+      } else {
+        data.client = { connect: { id: clientId } };
+      }
     }
 
     if (Object.keys(data).length === 0) {
@@ -131,6 +159,7 @@ export class UsersService {
     await this.audit.logUpdate('User', user.id, actorUserId, {
       email: user.email,
       role: user.role,
+      clientId: user.clientId,
       fields: Object.keys(data).map((k) => (k === 'password' ? 'password' : k)),
     });
 
@@ -191,5 +220,18 @@ export class UsersService {
       throw new BadRequestException(`role must be one of: ${ROLES.join(', ')}`);
     }
     return value as Role;
+  }
+
+  private async resolveClientLink(role: Role, clientId?: string | null) {
+    if (role !== 'client') {
+      return null;
+    }
+    const id = typeof clientId === 'string' ? clientId.trim() : '';
+    if (!id) {
+      throw new BadRequestException('client role requires a linked client profile (clientId)');
+    }
+    const client = await this.prisma.client.findUnique({ where: { id } });
+    if (!client) throw new BadRequestException('client profile not found');
+    return id;
   }
 }

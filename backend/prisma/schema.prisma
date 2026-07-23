@@ -23,8 +23,14 @@ model User {
   email    String @unique
   password String
   role     Role
+  clientId String? @unique
+  client   Client? @relation(fields: [clientId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  appointmentsCreated Appointment[]
+  notifications       Notification[]
 }
 
 model Client {
@@ -35,6 +41,8 @@ model Client {
   isActive Boolean @default(true)
 
   cases Case[]
+  appointments Appointment[]
+  portalUser User?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -51,6 +59,7 @@ model Case {
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id])
   documents Document[]
+  appointments Appointment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -67,6 +76,43 @@ model Document {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Appointment {
+  id          String   @id @default(uuid())
+  title       String
+  type        String   // consultation | court | meeting
+  status      String   // scheduled | completed | cancelled
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime?
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  caseId String?
+  case   Case? @relation(fields: [caseId], references: [id])
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id       String  @id @default(uuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title    String
+  body     String?
+  type     String  // case_update | appointment | document | internal
+  entity   String?
+  entityId String?
+  href     String?
+  readAt   DateTime?
+
+  createdAt DateTime @default(now())
 }
 
 model AuditLog {

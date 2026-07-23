@@ -45,6 +45,8 @@ function isAllowedFile(filename: string): boolean {
 
 export default function UploadDocumentPage() {
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
+  const user = useAuthStore((s) => s.user);
+  const isClient = user?.role === 'client';
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [loadingCases, setLoadingCases] = useState(true);
   const [file, setFile] = useState<File | null>(null);
@@ -97,6 +99,11 @@ export default function UploadDocumentPage() {
 
     if (!isAllowedFile(file.name)) {
       setError(`Unsupported file type. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`);
+      return;
+    }
+
+    if (isClient && !caseId) {
+      setError('Please select one of your cases for this upload.');
       return;
     }
 
@@ -169,21 +176,25 @@ export default function UploadDocumentPage() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Case (optional)</span>
+          <span className="text-sm font-medium">{isClient ? 'Case' : 'Case (optional)'}</span>
           <select
             name="caseId"
             value={caseId}
             onChange={(e) => setCaseId(e.target.value)}
             className="app-select"
             disabled={loadingCases}
+            required={isClient}
           >
-            <option value="">No case</option>
+            <option value="">{isClient ? 'Select a case' : 'No case'}</option>
             {cases.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title}
               </option>
             ))}
           </select>
+          {isClient ? (
+            <span className="text-xs text-zinc-500">Uploads must be attached to one of your cases.</span>
+          ) : null}
         </label>
 
         {error ? (

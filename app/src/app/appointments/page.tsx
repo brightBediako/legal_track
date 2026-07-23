@@ -1,31 +1,29 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { AppShell } from '../../components/layout/AppShell';
 import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../store/auth.store';
 
-type CaseItem = {
+type AppointmentItem = {
   id: string;
   title: string;
-  description?: string | null;
+  type: string;
   status: string;
-  courtDate?: string | null;
-  clientId?: string | null;
+  startsAt: string;
+  endsAt?: string | null;
   client?: { id: string; name: string } | null;
-  createdAt: string;
+  case?: { id: string; title: string } | null;
 };
 
-export default function CasesPage() {
+export default function AppointmentsPage() {
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
   const user = useAuthStore((s) => s.user);
   const isClient = user?.role === 'client';
-  const searchParams = useSearchParams();
-  const initialStatus = searchParams.get('status') ?? '';
-  const [cases, setCases] = useState<CaseItem[]>([]);
+  const [items, setItems] = useState<AppointmentItem[]>([]);
   const [q, setQ] = useState('');
-  const [status, setStatus] = useState(initialStatus);
+  const [type, setType] = useState('');
+  const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,74 +32,83 @@ export default function CasesPage() {
   }, [hydrate]);
 
   useEffect(() => {
-    setStatus(initialStatus);
-  }, [initialStatus]);
-
-  useEffect(() => {
     async function run() {
       try {
         setLoading(true);
         setError(null);
         const params = new URLSearchParams();
         if (q.trim()) params.set('q', q.trim());
+        if (type) params.set('type', type);
         if (status) params.set('status', status);
         const qs = params.toString();
-        const data = await apiGet<CaseItem[]>(`/cases${qs ? `?${qs}` : ''}`);
-        setCases(data);
+        const data = await apiGet<AppointmentItem[]>(`/appointments${qs ? `?${qs}` : ''}`);
+        setItems(data);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load cases');
+        setError(e instanceof Error ? e.message : 'Failed to load appointments');
       } finally {
         setLoading(false);
       }
     }
     const timer = window.setTimeout(run, 200);
     return () => window.clearTimeout(timer);
-  }, [q, status]);
+  }, [q, type, status]);
 
   return (
     <AppShell
-      title="Cases"
-      subtitle={isClient ? 'Your matters and statuses' : 'Track active matters and statuses'}
+      title="Appointments"
+      subtitle={
+        isClient
+          ? 'Your consultations, court dates, and meetings'
+          : 'Consultations, court schedules, and meetings'
+      }
       actions={
         isClient ? (
-          <a className="app-btn-muted" href="/documents/upload">
-            Upload document
+          <a className="app-btn-muted" href="/dashboard">
+            Dashboard
           </a>
         ) : (
           <div className="flex items-center gap-2">
-            <a className="app-btn-primary h-10 px-4" href="/cases/new">
-              New case
+            <a className="app-btn-primary h-10 px-4" href="/appointments/new">
+              New appointment
             </a>
-            <a className="app-btn-muted" href="/clients">
-              Clients
+            <a className="app-btn-muted" href="/dashboard">
+              Dashboard
             </a>
           </div>
         )
       }
     >
-      <div className="mb-4 grid max-w-2xl gap-4 sm:grid-cols-2">
+      <div className="mb-4 grid max-w-4xl gap-4 sm:grid-cols-3">
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">Search</span>
           <input
             className="app-input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Title, notes, or client"
+            placeholder="Title, client, or case"
           />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Type</span>
+          <select className="app-select" value={type} onChange={(e) => setType(e.target.value)}>
+            <option value="">All</option>
+            <option value="consultation">Consultation</option>
+            <option value="court">Court</option>
+            <option value="meeting">Meeting</option>
+          </select>
         </label>
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">Status</span>
           <select className="app-select" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">All</option>
-            <option value="open">Open</option>
-            <option value="pending">Pending</option>
-            <option value="closed">Closed</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </label>
       </div>
 
       {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
-
       {error ? (
         <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
@@ -112,46 +119,39 @@ export default function CasesPage() {
         <table className="w-full table-auto">
           <thead className="bg-zinc-50 text-left text-sm text-zinc-600">
             <tr>
+              <th className="px-4 py-3 font-medium">When</th>
               <th className="px-4 py-3 font-medium">Title</th>
+              <th className="px-4 py-3 font-medium">Type</th>
               <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Client</th>
-              <th className="px-4 py-3 font-medium">Court date</th>
+              <th className="px-4 py-3 font-medium">Client / Case</th>
             </tr>
           </thead>
           <tbody className="text-sm">
-            {!loading && cases.length === 0 ? (
+            {!loading && items.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-zinc-600" colSpan={4}>
-                  No cases yet.
+                <td className="px-4 py-3 text-zinc-600" colSpan={5}>
+                  No appointments yet.
                 </td>
               </tr>
             ) : (
-              cases.map((c) => (
-                <tr key={c.id} className="border-t border-zinc-200">
+              items.map((a) => (
+                <tr key={a.id} className="border-t border-zinc-200">
+                  <td className="px-4 py-3 text-zinc-700 whitespace-nowrap">
+                    {new Date(a.startsAt).toLocaleString()}
+                  </td>
                   <td className="px-4 py-3 font-medium">
-                    <a className="text-zinc-900 underline-offset-2 hover:underline" href={`/cases/${c.id}`}>
-                      {c.title}
+                    <a
+                      href={`/appointments/${a.id}`}
+                      className="text-zinc-900 underline-offset-2 hover:underline"
+                    >
+                      {a.title}
                     </a>
                   </td>
-                  <td className="px-4 py-3 text-zinc-700">{c.status}</td>
+                  <td className="px-4 py-3 text-zinc-700">{a.type}</td>
+                  <td className="px-4 py-3 text-zinc-700">{a.status}</td>
                   <td className="px-4 py-3 text-zinc-700">
-                    {c.client ? (
-                      isClient ? (
-                        c.client.name
-                      ) : (
-                        <a
-                          href={`/clients/${c.client.id}`}
-                          className="underline-offset-2 hover:underline"
-                        >
-                          {c.client.name}
-                        </a>
-                      )
-                    ) : (
-                      '—'
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700">
-                    {c.courtDate ? new Date(c.courtDate).toLocaleDateString() : '—'}
+                    {a.client?.name ?? '—'}
+                    {a.case ? ` · ${a.case.title}` : ''}
                   </td>
                 </tr>
               ))
