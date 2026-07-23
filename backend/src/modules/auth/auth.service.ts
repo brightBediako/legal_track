@@ -2,12 +2,14 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../database/prisma.service';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly audit: AuditService,
   ) {}
 
   async login(input: { email: string; password: string }) {
@@ -24,11 +26,23 @@ export class AuthService {
     });
 
     if (!user) {
+      await this.audit.log({
+        action: 'login_failure',
+        entity: 'User',
+        metadata: { email, reason: 'unknown_user' },
+      });
       throw new UnauthorizedException('invalid credentials');
     }
 
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) {
+      await this.audit.log({
+        action: 'login_failure',
+        entity: 'User',
+        entityId: user.id,
+        userId: user.id,
+        metadata: { email, reason: 'bad_password' },
+      });
       throw new UnauthorizedException('invalid credentials');
     }
 
@@ -38,7 +52,14 @@ export class AuthService {
       role: user.role,
     });
 
+    await this.audit.log({
+      action: 'login_success',
+      entity: 'User',
+      entityId: user.id,
+      userId: user.id,
+      metadata: { email: user.email, role: user.role },
+    });
+
     return { accessToken, user: { id: user.id, email: user.email, role: user.role } };
   }
 }
-

@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
   { href: '/clients', label: 'Clients', icon: ClientsIcon },
   { href: '/cases', label: 'Cases', icon: CasesIcon },
-  { href: '/documents/upload', label: 'Documents', icon: DocumentsIcon },
+  { href: '/documents', label: 'Documents', icon: DocumentsIcon },
 ];
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -99,7 +99,7 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-zinc-200 bg-white lg:block">
         <div className="flex h-full flex-col">
           <div className="border-b border-zinc-200 px-5 py-5">
-            <p className="text-sm font-semibold text-zinc-900">Black Law Consult</p>
+            <p className="text-sm font-semibold text-zinc-900">LegalTrack</p>
             <p className="mt-1 text-xs text-zinc-500">Operations Dashboard</p>
           </div>
           <nav className="flex-1 px-3 py-4" aria-label="Sidebar Navigation">

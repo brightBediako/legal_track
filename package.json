@@ -1,15 +1,17 @@
 {
-  "name": "black-law-consult",
+  "name": "legal-track",
   "private": true,
   "version": "0.1.0",
   "workspaces": [
-    "website",
     "app",
     "backend"
   ],
   "scripts": {
-    "dev:website": "npm run dev --workspace website",
     "dev:app": "npm run dev --workspace app",
-    "dev:backend": "npm run dev --workspace backend"
+    "dev:backend": "npm run dev --workspace backend",
+    "db:generate": "npm run db:generate --workspace @legal-track/backend",
+    "db:migrate": "npm run db:migrate --workspace @legal-track/backend",
+    "db:migrate:dev": "npm run db:migrate:dev --workspace @legal-track/backend",
+    "db:migrate:status": "npm run db:migrate:status --workspace @legal-track/backend"
   }
 }

@@ -26,7 +26,7 @@ export default function LoginPage() {
       const email = String(form.get('email') || '');
       const password = String(form.get('password') || '');
 
-      const res = await apiPost<LoginResponse>('/auth/login', { email, password });
+      const res = await apiPost<LoginResponse>('/auth/login', { email, password }, { auth: false });
       setSession({ accessToken: res.accessToken, user: res.user });
       router.push('/dashboard');
     } catch (err) {

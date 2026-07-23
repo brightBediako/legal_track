@@ -1,9 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiPost } from '../../../lib/api';
 import { AppShell } from '../../../components/layout/AppShell';
+import { useAuthStore } from '../../../store/auth.store';
 
 type Client = {
   id: string;
@@ -14,8 +15,13 @@ type Client = {
 
 export default function NewClientPage() {
   const router = useRouter();
+  const hydrate = useAuthStore((s) => s.hydrateFromStorage);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
 
   async function onSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,55 +62,40 @@ export default function NewClientPage() {
         </a>
       }
     >
-
       <form
         onSubmit={onSubmit}
         className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
       >
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Name</span>
-            <input
-              name="name"
-              className="app-input"
-              placeholder="Client name"
-              required
-            />
-          </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Name</span>
+          <input name="name" className="app-input" placeholder="Client name" required />
+        </label>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Email (optional)</span>
-            <input
-              type="email"
-              name="email"
-              className="app-input"
-              placeholder="email@example.com"
-            />
-          </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Email (optional)</span>
+          <input
+            type="email"
+            name="email"
+            className="app-input"
+            placeholder="email@example.com"
+          />
+        </label>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Phone (optional)</span>
-            <input
-              name="phone"
-              className="app-input"
-              placeholder="+233..."
-            />
-          </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Phone (optional)</span>
+          <input name="phone" className="app-input" placeholder="+233..." />
+        </label>
 
-          {error ? (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          ) : null}
+        {error ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </p>
+        ) : null}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="app-btn-primary mt-2"
-          >
-            {submitting ? 'Creating…' : 'Create client'}
-          </button>
+        <button type="submit" disabled={submitting} className="app-btn-primary mt-2">
+          {submitting ? 'Creating…' : 'Create client'}
+        </button>
       </form>
     </AppShell>
   );
 }
-
