@@ -128,14 +128,14 @@ export default function AppointmentDetailPage() {
         </a>
       }
     >
-      {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error mb-4">
           {error}
         </p>
       ) : null}
       {success ? (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="app-alert-success mb-4">
           {success}
         </p>
       ) : null}
@@ -143,15 +143,15 @@ export default function AppointmentDetailPage() {
       {item && canEdit ? (
         <form
           onSubmit={onSave}
-          className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+          className="flex max-w-xl flex-col gap-4 app-panel"
         >
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Title</span>
+            <span className="app-label">Title</span>
             <input className="app-input" value={title} onChange={(e) => setTitle(e.target.value)} required />
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Type</span>
+            <span className="app-label">Type</span>
             <select className="app-select" value={type} onChange={(e) => setType(e.target.value)}>
               <option value="consultation">Consultation</option>
               <option value="court">Court</option>
@@ -160,7 +160,7 @@ export default function AppointmentDetailPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Status</span>
+            <span className="app-label">Status</span>
             <select className="app-select" value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="scheduled">Scheduled</option>
               <option value="completed">Completed</option>
@@ -169,7 +169,7 @@ export default function AppointmentDetailPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Starts at</span>
+            <span className="app-label">Starts at</span>
             <input
               type="datetime-local"
               className="app-input"
@@ -180,7 +180,7 @@ export default function AppointmentDetailPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Ends at</span>
+            <span className="app-label">Ends at</span>
             <input
               type="datetime-local"
               className="app-input"
@@ -190,7 +190,7 @@ export default function AppointmentDetailPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Description</span>
+            <span className="app-label">Description</span>
             <textarea
               className="app-textarea"
               value={description}
@@ -199,7 +199,7 @@ export default function AppointmentDetailPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Client</span>
+            <span className="app-label">Client</span>
             <select className="app-select" value={clientId} onChange={(e) => setClientId(e.target.value)}>
               <option value="">No client</option>
               {clients.map((c) => (
@@ -211,7 +211,7 @@ export default function AppointmentDetailPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Case</span>
+            <span className="app-label">Case</span>
             <select className="app-select" value={caseId} onChange={(e) => setCaseId(e.target.value)}>
               <option value="">No case</option>
               {cases.map((c) => (
@@ -229,29 +229,29 @@ export default function AppointmentDetailPage() {
       ) : null}
 
       {item && !canEdit ? (
-        <div className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="flex max-w-xl flex-col gap-4 app-panel">
           <dl className="space-y-3 text-sm">
             <div>
-              <dt className="text-zinc-500">Type</dt>
-              <dd className="font-medium text-zinc-900">{item.type}</dd>
+              <dt className="text-slate-500">Type</dt>
+              <dd className="font-medium text-slate-900">{item.type}</dd>
             </div>
             <div>
-              <dt className="text-zinc-500">Status</dt>
-              <dd className="font-medium text-zinc-900">{item.status}</dd>
+              <dt className="text-slate-500">Status</dt>
+              <dd className="font-medium text-slate-900">{item.status}</dd>
             </div>
             <div>
-              <dt className="text-zinc-500">Starts</dt>
-              <dd className="text-zinc-900">{new Date(item.startsAt).toLocaleString()}</dd>
+              <dt className="text-slate-500">Starts</dt>
+              <dd className="text-slate-900">{new Date(item.startsAt).toLocaleString()}</dd>
             </div>
             <div>
-              <dt className="text-zinc-500">Ends</dt>
-              <dd className="text-zinc-900">
+              <dt className="text-slate-500">Ends</dt>
+              <dd className="text-slate-900">
                 {item.endsAt ? new Date(item.endsAt).toLocaleString() : '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-zinc-500">Case</dt>
-              <dd className="text-zinc-900">
+              <dt className="text-slate-500">Case</dt>
+              <dd className="text-slate-900">
                 {item.case ? (
                   <a
                     href={`/cases/${item.case.id}`}
@@ -265,8 +265,8 @@ export default function AppointmentDetailPage() {
               </dd>
             </div>
             <div>
-              <dt className="text-zinc-500">Description</dt>
-              <dd className="whitespace-pre-wrap text-zinc-900">{item.description || '—'}</dd>
+              <dt className="text-slate-500">Description</dt>
+              <dd className="whitespace-pre-wrap text-slate-900">{item.description || '—'}</dd>
             </div>
           </dl>
         </div>

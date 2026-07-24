@@ -175,16 +175,16 @@ export default function UploadDocumentPage() {
     >
       <form
         onSubmit={onSubmit}
-        className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+        className="flex max-w-xl flex-col gap-4 app-panel"
       >
         {replacesDocumentId ? (
-          <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
+          <p className="app-alert-info">
             Creating a new version of document <span className="font-medium">{replacesDocumentId}</span>.
           </p>
         ) : null}
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">File</span>
+          <span className="app-label">File</span>
           <input
             type="file"
             name="file"
@@ -193,13 +193,13 @@ export default function UploadDocumentPage() {
             className="text-sm"
             required
           />
-          <span className="text-xs text-zinc-500">
+          <span className="app-help">
             Allowed: png, jpeg, jpg, docx, doc, pdf, mp3, mp4
           </span>
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Category</span>
+          <span className="app-label">Category</span>
           <select
             className="app-select"
             value={category}
@@ -215,7 +215,7 @@ export default function UploadDocumentPage() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Provider</span>
+          <span className="app-label">Provider</span>
           <select
             name="provider"
             value={provider}
@@ -229,7 +229,7 @@ export default function UploadDocumentPage() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">{isClient ? 'Case' : 'Case (optional)'}</span>
+          <span className="app-label">{isClient ? 'Case' : 'Case (optional)'}</span>
           <select
             name="caseId"
             value={caseId}
@@ -246,18 +246,18 @@ export default function UploadDocumentPage() {
             ))}
           </select>
           {isClient ? (
-            <span className="text-xs text-zinc-500">Uploads must be attached to one of your cases.</span>
+            <span className="app-help">Uploads must be attached to one of your cases.</span>
           ) : null}
         </label>
 
         {error ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="app-alert-error">
             {error}
           </p>
         ) : null}
 
         {success ? (
-          <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          <p className="app-alert-success">
             Uploaded <span className="font-medium">{success.filename}</span> as{' '}
             <span className="font-medium">v{success.version}</span> ({success.category}).
           </p>

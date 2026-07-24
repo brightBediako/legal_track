@@ -102,12 +102,12 @@ export default function CasesPage() {
       }
     >
       <div
-        className={`mb-4 grid max-w-4xl gap-4 ${
+        className={`app-panel mb-6 grid max-w-4xl gap-4 ${
           canFilterAssignee ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
         }`}
       >
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Search</span>
+          <span className="app-label">Search</span>
           <input
             className="app-input"
             value={q}
@@ -116,7 +116,7 @@ export default function CasesPage() {
           />
         </label>
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Status</span>
+          <span className="app-label">Status</span>
           <select className="app-select" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">All</option>
             <option value="open">Open</option>
@@ -126,7 +126,7 @@ export default function CasesPage() {
         </label>
         {canFilterAssignee ? (
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Assignee</span>
+            <span className="app-label">Assignee</span>
             <select
               className="app-select"
               value={assigneeId}
@@ -143,42 +143,44 @@ export default function CasesPage() {
         ) : null}
       </div>
 
-      {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
 
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error mb-4">
           {error}
         </p>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <table className="w-full table-auto">
-          <thead className="bg-zinc-50 text-left text-sm text-zinc-600">
+      <div className="app-table-wrap">
+        <table className="app-table">
+          <thead>
             <tr>
-              <th className="px-4 py-3 font-medium">Title</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Client</th>
-              {!isClient ? <th className="px-4 py-3 font-medium">Assignee</th> : null}
-              <th className="px-4 py-3 font-medium">Court date</th>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Client</th>
+              {!isClient ? <th>Assignee</th> : null}
+              <th>Court date</th>
             </tr>
           </thead>
-          <tbody className="text-sm">
+          <tbody>
             {!loading && cases.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-zinc-600" colSpan={isClient ? 4 : 5}>
+                <td className="text-slate-500" colSpan={isClient ? 4 : 5}>
                   No cases yet.
                 </td>
               </tr>
             ) : (
               cases.map((c) => (
-                <tr key={c.id} className="border-t border-zinc-200">
-                  <td className="px-4 py-3 font-medium">
-                    <a className="text-zinc-900 underline-offset-2 hover:underline" href={`/cases/${c.id}`}>
+                <tr key={c.id}>
+                  <td className="font-medium">
+                    <a className="app-link" href={`/cases/${c.id}`}>
                       {c.title}
                     </a>
                   </td>
-                  <td className="px-4 py-3 text-zinc-700">{c.status}</td>
-                  <td className="px-4 py-3 text-zinc-700">
+                  <td>
+                    <span className={`app-status app-status-${c.status}`}>{c.status}</span>
+                  </td>
+                  <td>
                     {c.client ? (
                       isClient ? (
                         c.client.name
@@ -195,9 +197,9 @@ export default function CasesPage() {
                     )}
                   </td>
                   {!isClient ? (
-                    <td className="px-4 py-3 text-zinc-700">{c.assignee?.email ?? '—'}</td>
+                    <td>{c.assignee?.email ?? '—'}</td>
                   ) : null}
-                  <td className="px-4 py-3 text-zinc-700">
+                  <td>
                     {c.courtDate ? new Date(c.courtDate).toLocaleDateString() : '—'}
                   </td>
                 </tr>

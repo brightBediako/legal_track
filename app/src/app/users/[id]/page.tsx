@@ -105,28 +105,28 @@ export default function UserDetailPage() {
       }
     >
       {!isAdmin ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error">
           Only administrators can manage users.
         </p>
       ) : null}
 
-      {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
 
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error mb-4">
           {error}
         </p>
       ) : null}
 
       {success ? (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="app-alert-success mb-4">
           {success}
         </p>
       ) : null}
 
       {isAdmin && item && isPortalClient ? (
-        <div className="max-w-xl rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <p className="text-sm text-zinc-700">
+        <div className="app-panel max-w-xl">
+          <p className="text-sm text-slate-700">
             This is a client portal account created when the client was registered. Manage the
             profile from{' '}
             {item.clientId ? (
@@ -140,20 +140,20 @@ export default function UserDetailPage() {
           </p>
           <dl className="mt-4 space-y-2 text-sm">
             <div>
-              <dt className="text-zinc-500">Name</dt>
-              <dd className="font-medium text-zinc-900">{item.name ?? '—'}</dd>
+              <dt className="text-slate-500">Name</dt>
+              <dd className="font-medium text-slate-900">{item.name ?? '—'}</dd>
             </div>
             <div>
-              <dt className="text-zinc-500">Email</dt>
-              <dd className="font-medium text-zinc-900">{item.email}</dd>
+              <dt className="text-slate-500">Email</dt>
+              <dd className="font-medium text-slate-900">{item.email}</dd>
             </div>
             <div>
-              <dt className="text-zinc-500">Phone</dt>
-              <dd className="font-medium text-zinc-900">{item.phone ?? '—'}</dd>
+              <dt className="text-slate-500">Phone</dt>
+              <dd className="font-medium text-slate-900">{item.phone ?? '—'}</dd>
             </div>
           </dl>
           {item.mustChangePassword ? (
-            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <p className="app-alert-warn mt-3">
               Password change still required on next login.
             </p>
           ) : null}
@@ -163,10 +163,10 @@ export default function UserDetailPage() {
       {isAdmin && item && !isPortalClient ? (
         <form
           onSubmit={onSave}
-          className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+          className="flex max-w-xl flex-col gap-4 app-panel"
         >
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Name</span>
+            <span className="app-label">Name</span>
             <input
               className="app-input"
               value={name}
@@ -176,7 +176,7 @@ export default function UserDetailPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Email</span>
+            <span className="app-label">Email</span>
             <input
               type="email"
               className="app-input"
@@ -187,7 +187,7 @@ export default function UserDetailPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Phone</span>
+            <span className="app-label">Phone</span>
             <input
               className="app-input"
               value={phone}
@@ -198,7 +198,7 @@ export default function UserDetailPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Role</span>
+            <span className="app-label">Role</span>
             <select className="app-select" value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="admin">Admin</option>
               <option value="lawyer">Lawyer</option>
@@ -207,7 +207,7 @@ export default function UserDetailPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Reset password (optional)</span>
+            <span className="app-label">Reset password (optional)</span>
             <input
               type="password"
               className="app-input"
@@ -219,12 +219,12 @@ export default function UserDetailPage() {
           </label>
 
           {item.mustChangePassword ? (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <p className="app-alert-warn">
               User still needs to change their temporary (phone) password on next login.
             </p>
           ) : null}
 
-          <p className="text-xs text-zinc-500">
+          <p className="app-help">
             Created {new Date(item.createdAt).toLocaleString()} · Updated{' '}
             {new Date(item.updatedAt).toLocaleString()}
           </p>

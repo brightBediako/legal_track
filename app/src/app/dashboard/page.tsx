@@ -146,12 +146,17 @@ export default function DashboardPage() {
     >
       {canView ? (
         <div className="flex flex-col gap-6">
-          <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <p className="mb-3 text-sm text-zinc-700">
-              Signed in as <span className="font-medium">{user?.email}</span> ({user?.role}).
+          <section className="app-panel">
+            <p className="mb-1 text-xs font-medium tracking-wide text-slate-500 uppercase">
+              Signed in
+            </p>
+            <p className="mb-4 text-sm text-slate-700">
+              <span className="font-medium text-slate-900">{user?.email}</span>
+              <span className="text-slate-400"> · </span>
+              <span className="capitalize">{user?.role}</span>
             </p>
             <label className="flex max-w-xl flex-col gap-2">
-              <span className="text-sm font-medium">
+              <span className="app-label">
                 {isClient ? 'Search your cases' : 'Search clients and cases'}
               </span>
               <input
@@ -166,9 +171,9 @@ export default function DashboardPage() {
               />
             </label>
 
-            {searching ? <p className="mt-3 text-sm text-zinc-600">Searching…</p> : null}
+            {searching ? <p className="mt-3 text-sm text-slate-500">Searching…</p> : null}
             {searchError ? (
-              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p className="mt-3 app-alert-error">
                 {searchError}
               </p>
             ) : null}
@@ -177,20 +182,20 @@ export default function DashboardPage() {
               <div className={`mt-4 grid gap-4 ${isStaff ? 'lg:grid-cols-2' : ''}`}>
                 {isStaff ? (
                   <div>
-                    <h2 className="mb-2 text-sm font-semibold text-zinc-900">Clients</h2>
+                    <h2 className="mb-2 app-section-title">Clients</h2>
                     {search.clients.length === 0 ? (
-                      <p className="text-sm text-zinc-600">No matching clients.</p>
+                      <p className="text-sm text-slate-500">No matching clients.</p>
                     ) : (
                       <ul className="space-y-2 text-sm">
                         {search.clients.map((c) => (
                           <li key={c.id}>
                             <a
                               href={`/clients/${c.id}`}
-                              className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                              className="font-medium text-slate-900 underline-offset-2 hover:underline"
                             >
                               {c.name}
                             </a>
-                            <span className="ml-2 text-zinc-500">
+                            <span className="ml-2 text-slate-500">
                               {c.isActive ? 'Active' : 'Inactive'}
                             </span>
                           </li>
@@ -200,20 +205,20 @@ export default function DashboardPage() {
                   </div>
                 ) : null}
                 <div>
-                  <h2 className="mb-2 text-sm font-semibold text-zinc-900">Cases</h2>
+                  <h2 className="mb-2 app-section-title">Cases</h2>
                   {search.cases.length === 0 ? (
-                    <p className="text-sm text-zinc-600">No matching cases.</p>
+                    <p className="text-sm text-slate-500">No matching cases.</p>
                   ) : (
                     <ul className="space-y-2 text-sm">
                       {search.cases.map((c) => (
                         <li key={c.id}>
                           <a
                             href={`/cases/${c.id}`}
-                            className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                            className="font-medium text-slate-900 underline-offset-2 hover:underline"
                           >
                             {c.title}
                           </a>
-                          <span className="ml-2 text-zinc-500">{c.status}</span>
+                          <span className="ml-2 text-slate-500">{c.status}</span>
                         </li>
                       ))}
                     </ul>
@@ -223,9 +228,9 @@ export default function DashboardPage() {
             ) : null}
           </section>
 
-          {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+          {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
           {error ? (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="app-alert-error">
               {error}
             </p>
           ) : null}
@@ -244,26 +249,26 @@ export default function DashboardPage() {
               </section>
 
               <section className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="app-panel">
                   <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-zinc-900">Upcoming court dates</h2>
-                    <a className="text-xs text-zinc-500 underline-offset-2 hover:underline" href="/cases">
+                    <h2 className="app-section-title">Upcoming court dates</h2>
+                    <a className="app-help underline-offset-2 hover:underline" href="/cases">
                       All cases
                     </a>
                   </div>
                   {summary.upcomingCourtDates.length === 0 ? (
-                    <p className="text-sm text-zinc-600">No court dates in the next 30 days.</p>
+                    <p className="text-sm text-slate-500">No court dates in the next 30 days.</p>
                   ) : (
                     <ul className="space-y-3 text-sm">
                       {summary.upcomingCourtDates.map((c) => (
-                        <li key={c.id} className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0">
+                        <li key={c.id} className="border-t border-slate-100 pt-3 first:border-t-0 first:pt-0">
                           <a
                             href={`/cases/${c.id}`}
-                            className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                            className="font-medium text-slate-900 underline-offset-2 hover:underline"
                           >
                             {c.title}
                           </a>
-                          <p className="mt-1 text-xs text-zinc-500">
+                          <p className="mt-1 app-help">
                             {c.courtDate ? new Date(c.courtDate).toLocaleDateString() : '—'}
                             {isStaff && c.client ? ` · ${c.client.name}` : ''}
                           </p>
@@ -273,13 +278,13 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="app-panel">
                   <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-zinc-900">
+                    <h2 className="app-section-title">
                       {isClient ? 'Upcoming appointments' : 'Recent documents'}
                     </h2>
                     <a
-                      className="text-xs text-zinc-500 underline-offset-2 hover:underline"
+                      className="app-help underline-offset-2 hover:underline"
                       href={isClient ? '/appointments' : '/documents'}
                     >
                       {isClient ? 'All appointments' : 'All documents'}
@@ -287,18 +292,18 @@ export default function DashboardPage() {
                   </div>
                   {isClient ? (
                     !summary.upcomingAppointments || summary.upcomingAppointments.length === 0 ? (
-                      <p className="text-sm text-zinc-600">No upcoming appointments.</p>
+                      <p className="text-sm text-slate-500">No upcoming appointments.</p>
                     ) : (
                       <ul className="space-y-3 text-sm">
                         {summary.upcomingAppointments.map((a) => (
-                          <li key={a.id} className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0">
+                          <li key={a.id} className="border-t border-slate-100 pt-3 first:border-t-0 first:pt-0">
                             <a
                               href={`/appointments/${a.id}`}
-                              className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                              className="font-medium text-slate-900 underline-offset-2 hover:underline"
                             >
                               {a.title}
                             </a>
-                            <p className="mt-1 text-xs text-zinc-500">
+                            <p className="mt-1 app-help">
                               {new Date(a.startsAt).toLocaleString()} · {a.type}
                             </p>
                           </li>
@@ -306,13 +311,13 @@ export default function DashboardPage() {
                       </ul>
                     )
                   ) : summary.recentDocuments.length === 0 ? (
-                    <p className="text-sm text-zinc-600">No documents yet.</p>
+                    <p className="text-sm text-slate-500">No documents yet.</p>
                   ) : (
                     <ul className="space-y-3 text-sm">
                       {summary.recentDocuments.map((d) => (
-                        <li key={d.id} className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0">
-                          <span className="font-medium text-zinc-900">{d.filename}</span>
-                          <p className="mt-1 text-xs text-zinc-500">
+                        <li key={d.id} className="border-t border-slate-100 pt-3 first:border-t-0 first:pt-0">
+                          <span className="font-medium text-slate-900">{d.filename}</span>
+                          <p className="mt-1 app-help">
                             {new Date(d.createdAt).toLocaleString()}
                             {d.case ? (
                               <>
@@ -334,21 +339,21 @@ export default function DashboardPage() {
               </section>
 
               {isClient ? (
-                <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="app-panel">
                   <div className="mb-3 flex items-center justify-between">
-                    <h2 className="text-sm font-semibold text-zinc-900">Recent documents</h2>
-                    <a className="text-xs text-zinc-500 underline-offset-2 hover:underline" href="/documents">
+                    <h2 className="app-section-title">Recent documents</h2>
+                    <a className="app-help underline-offset-2 hover:underline" href="/documents">
                       All documents
                     </a>
                   </div>
                   {summary.recentDocuments.length === 0 ? (
-                    <p className="text-sm text-zinc-600">No documents yet.</p>
+                    <p className="text-sm text-slate-500">No documents yet.</p>
                   ) : (
                     <ul className="space-y-3 text-sm">
                       {summary.recentDocuments.map((d) => (
-                        <li key={d.id} className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0">
-                          <span className="font-medium text-zinc-900">{d.filename}</span>
-                          <p className="mt-1 text-xs text-zinc-500">
+                        <li key={d.id} className="border-t border-slate-100 pt-3 first:border-t-0 first:pt-0">
+                          <span className="font-medium text-slate-900">{d.filename}</span>
+                          <p className="mt-1 app-help">
                             {new Date(d.createdAt).toLocaleString()}
                             {d.case ? (
                               <>
@@ -369,9 +374,9 @@ export default function DashboardPage() {
                 </section>
               ) : null}
 
-              <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <section className="app-panel">
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-zinc-900">Recently updated cases</h2>
+                  <h2 className="app-section-title">Recently updated cases</h2>
                   {isStaff ? (
                     <a className="app-btn-muted h-9 px-3" href="/cases/new">
                       New case
@@ -383,24 +388,21 @@ export default function DashboardPage() {
                   )}
                 </div>
                 {summary.recentCases.length === 0 ? (
-                  <p className="text-sm text-zinc-600">No cases yet.</p>
+                  <p className="text-sm text-slate-500">No cases yet.</p>
                 ) : (
-                  <ul className="divide-y divide-zinc-100 text-sm">
+                  <ul className="divide-y divide-slate-100 text-sm">
                     {summary.recentCases.map((c) => (
                       <li key={c.id} className="flex items-center justify-between gap-3 py-3">
                         <div>
-                          <a
-                            href={`/cases/${c.id}`}
-                            className="font-medium text-zinc-900 underline-offset-2 hover:underline"
-                          >
+                          <a href={`/cases/${c.id}`} className="app-link">
                             {c.title}
                           </a>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            {c.status}
+                          <p className="mt-1 app-help">
+                            <span className={`app-status app-status-${c.status}`}>{c.status}</span>
                             {isStaff && c.client ? ` · ${c.client.name}` : ''}
                           </p>
                         </div>
-                        <span className="text-xs text-zinc-500">
+                        <span className="app-help">
                           {new Date(c.updatedAt).toLocaleString()}
                         </span>
                       </li>
@@ -426,12 +428,9 @@ function MetricCard({
   href: string;
 }) {
   return (
-    <a
-      href={href}
-      className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition-colors hover:border-zinc-300"
-    >
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-zinc-900">{value}</p>
+    <a href={href} className="app-metric transition-all hover:border-slate-300 hover:shadow-md">
+      <p className="app-metric-label">{label}</p>
+      <p className="app-metric-value">{value}</p>
     </a>
   );
 }

@@ -93,15 +93,15 @@ export default function NewAppointmentPage() {
     >
       <form
         onSubmit={onSubmit}
-        className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+        className="flex max-w-xl flex-col gap-4 app-panel"
       >
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Title</span>
+          <span className="app-label">Title</span>
           <input name="title" className="app-input" required placeholder="Client consultation" />
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Type</span>
+          <span className="app-label">Type</span>
           <select name="type" className="app-select" defaultValue="consultation" required>
             <option value="consultation">Consultation</option>
             <option value="court">Court</option>
@@ -110,7 +110,7 @@ export default function NewAppointmentPage() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Status</span>
+          <span className="app-label">Status</span>
           <select name="status" className="app-select" defaultValue="scheduled" required>
             <option value="scheduled">Scheduled</option>
             <option value="completed">Completed</option>
@@ -119,7 +119,7 @@ export default function NewAppointmentPage() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Starts at</span>
+          <span className="app-label">Starts at</span>
           <input
             type="datetime-local"
             name="startsAt"
@@ -130,17 +130,17 @@ export default function NewAppointmentPage() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Ends at (optional)</span>
+          <span className="app-label">Ends at (optional)</span>
           <input type="datetime-local" name="endsAt" className="app-input" />
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Description (optional)</span>
+          <span className="app-label">Description (optional)</span>
           <textarea name="description" className="app-textarea" />
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Client (optional)</span>
+          <span className="app-label">Client (optional)</span>
           <select name="clientId" className="app-select" defaultValue="" disabled={loadingOptions}>
             <option value="">No client</option>
             {clients.map((c) => (
@@ -152,7 +152,7 @@ export default function NewAppointmentPage() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Case (optional)</span>
+          <span className="app-label">Case (optional)</span>
           <select name="caseId" className="app-select" defaultValue="" disabled={loadingOptions}>
             <option value="">No case</option>
             {cases.map((c) => (
@@ -164,7 +164,7 @@ export default function NewAppointmentPage() {
         </label>
 
         {error ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="app-alert-error">
             {error}
           </p>
         ) : null}

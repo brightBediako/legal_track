@@ -69,9 +69,9 @@ export default function NewClientPage() {
     >
       <form
         onSubmit={onSubmit}
-        className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+        className="flex max-w-xl flex-col gap-4 app-panel"
       >
-        <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
+        <p className="app-alert-info">
           A portal account is created automatically. The client signs in with their{' '}
           <span className="font-medium">email</span> and uses their{' '}
           <span className="font-medium">phone number as the temporary password</span>, then must
@@ -79,12 +79,12 @@ export default function NewClientPage() {
         </p>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Name</span>
+          <span className="app-label">Name</span>
           <input name="name" className="app-input" placeholder="Client full name" required />
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Email</span>
+          <span className="app-label">Email</span>
           <input
             type="email"
             name="email"
@@ -92,11 +92,11 @@ export default function NewClientPage() {
             placeholder="email@example.com"
             required
           />
-          <span className="text-xs text-zinc-500">Used as the portal login username</span>
+          <span className="app-help">Used as the portal login username</span>
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Phone</span>
+          <span className="app-label">Phone</span>
           <input
             name="phone"
             className="app-input"
@@ -104,13 +104,13 @@ export default function NewClientPage() {
             minLength={8}
             required
           />
-          <span className="text-xs text-zinc-500">
+          <span className="app-help">
             Temporary password (at least 8 characters). Share this with the client.
           </span>
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Location</span>
+          <span className="app-label">Location</span>
           <input
             name="location"
             className="app-input"
@@ -120,7 +120,7 @@ export default function NewClientPage() {
         </label>
 
         {error ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="app-alert-error">
             {error}
           </p>
         ) : null}

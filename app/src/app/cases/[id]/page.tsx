@@ -230,16 +230,16 @@ export default function CaseDetailPage() {
         </div>
       }
     >
-      {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
 
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error mb-4">
           {error}
         </p>
       ) : null}
 
       {success ? (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="app-alert-success mb-4">
           {success}
         </p>
       ) : null}
@@ -249,17 +249,17 @@ export default function CaseDetailPage() {
           {canEdit ? (
             <form
               onSubmit={onSave}
-              className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+              className="flex flex-col gap-4 app-panel"
             >
-              <h2 className="text-sm font-semibold text-zinc-900">Edit case</h2>
+              <h2 className="app-section-title">Edit case</h2>
 
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium">Title</span>
+                <span className="app-label">Title</span>
                 <input className="app-input" value={title} onChange={(e) => setTitle(e.target.value)} required />
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium">Description</span>
+                <span className="app-label">Description</span>
                 <textarea
                   className="app-textarea"
                   value={description}
@@ -268,7 +268,7 @@ export default function CaseDetailPage() {
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium">Status</span>
+                <span className="app-label">Status</span>
                 <select className="app-select" value={status} onChange={(e) => setStatus(e.target.value)}>
                   <option value="open">Open</option>
                   <option value="pending">Pending</option>
@@ -277,7 +277,7 @@ export default function CaseDetailPage() {
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium">Assigned lawyer</span>
+                <span className="app-label">Assigned lawyer</span>
                 {canAssign ? (
                   <select
                     className="app-select"
@@ -292,14 +292,14 @@ export default function CaseDetailPage() {
                     ))}
                   </select>
                 ) : (
-                  <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
+                  <p className="app-alert-info">
                     {item?.assignee?.email ?? (isLawyer ? 'You' : '—')}
                   </p>
                 )}
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium">Court date</span>
+                <span className="app-label">Court date</span>
                 <input
                   type="date"
                   className="app-input"
@@ -309,7 +309,7 @@ export default function CaseDetailPage() {
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium">Notes</span>
+                <span className="app-label">Notes</span>
                 <textarea
                   className="app-textarea"
                   value={notes}
@@ -319,7 +319,7 @@ export default function CaseDetailPage() {
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium">Client</span>
+                <span className="app-label">Client</span>
                 <select
                   className="app-select"
                   value={clientId}
@@ -350,30 +350,30 @@ export default function CaseDetailPage() {
               ) : null}
             </form>
           ) : (
-            <div className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <h2 className="text-sm font-semibold text-zinc-900">Case details</h2>
+            <div className="flex flex-col gap-4 app-panel">
+              <h2 className="app-section-title">Case details</h2>
               <dl className="space-y-3 text-sm">
                 <div>
-                  <dt className="text-zinc-500">Status</dt>
-                  <dd className="font-medium text-zinc-900">{item.status}</dd>
+                  <dt className="text-slate-500">Status</dt>
+                  <dd className="font-medium text-slate-900">{item.status}</dd>
                 </div>
                 <div>
-                  <dt className="text-zinc-500">Assignee</dt>
-                  <dd className="text-zinc-900">{item.assignee?.email ?? '—'}</dd>
+                  <dt className="text-slate-500">Assignee</dt>
+                  <dd className="text-slate-900">{item.assignee?.email ?? '—'}</dd>
                 </div>
                 <div>
-                  <dt className="text-zinc-500">Court date</dt>
-                  <dd className="text-zinc-900">
+                  <dt className="text-slate-500">Court date</dt>
+                  <dd className="text-slate-900">
                     {item.courtDate ? new Date(item.courtDate).toLocaleDateString() : '—'}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-zinc-500">Description</dt>
-                  <dd className="whitespace-pre-wrap text-zinc-900">{item.description || '—'}</dd>
+                  <dt className="text-slate-500">Description</dt>
+                  <dd className="whitespace-pre-wrap text-slate-900">{item.description || '—'}</dd>
                 </div>
                 <div>
-                  <dt className="text-zinc-500">Notes</dt>
-                  <dd className="whitespace-pre-wrap text-zinc-900">{item.notes || '—'}</dd>
+                  <dt className="text-slate-500">Notes</dt>
+                  <dd className="whitespace-pre-wrap text-slate-900">{item.notes || '—'}</dd>
                 </div>
               </dl>
             </div>
@@ -381,13 +381,13 @@ export default function CaseDetailPage() {
 
           <div className="flex flex-col gap-6">
             {!isClient ? (
-              <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-                <h2 className="mb-3 text-sm font-semibold text-zinc-900">Client</h2>
+              <div className="app-panel">
+                <h2 className="mb-3 app-section-title">Client</h2>
                 {item.client ? (
-                  <div className="text-sm text-zinc-700">
+                  <div className="text-sm text-slate-700">
                     <a
                       href={`/clients/${item.client.id}`}
-                      className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                      className="font-medium text-slate-900 underline-offset-2 hover:underline"
                     >
                       {item.client.name}
                     </a>
@@ -395,29 +395,29 @@ export default function CaseDetailPage() {
                     <p>{item.client.phone ?? 'No phone'}</p>
                   </div>
                 ) : (
-                  <p className="text-sm text-zinc-600">No client linked.</p>
+                  <p className="text-sm text-slate-500">No client linked.</p>
                 )}
                 {item.assignee ? (
-                  <p className="mt-3 text-sm text-zinc-600">
-                    Assigned to <span className="font-medium text-zinc-900">{item.assignee.email}</span>
+                  <p className="mt-3 text-sm text-slate-500">
+                    Assigned to <span className="font-medium text-slate-900">{item.assignee.email}</span>
                   </p>
                 ) : (
-                  <p className="mt-3 text-sm text-zinc-600">No lawyer assigned.</p>
+                  <p className="mt-3 text-sm text-slate-500">No lawyer assigned.</p>
                 )}
               </div>
             ) : null}
 
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-3 text-sm font-semibold text-zinc-900">Timeline</h2>
+            <div className="app-panel">
+              <h2 className="mb-3 app-section-title">Timeline</h2>
               {timeline.length === 0 ? (
-                <p className="text-sm text-zinc-600">No timeline events yet.</p>
+                <p className="text-sm text-slate-500">No timeline events yet.</p>
               ) : (
                 <ul className="space-y-3 text-sm">
                   {timeline.map((ev) => (
-                    <li key={ev.id} className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0">
-                      <p className="font-medium text-zinc-900">{ev.title}</p>
-                      {ev.body ? <p className="mt-1 text-zinc-700 whitespace-pre-wrap">{ev.body}</p> : null}
-                      <p className="mt-1 text-xs text-zinc-500">
+                    <li key={ev.id} className="border-t border-slate-100 pt-3 first:border-t-0 first:pt-0">
+                      <p className="font-medium text-slate-900">{ev.title}</p>
+                      {ev.body ? <p className="mt-1 text-slate-700 whitespace-pre-wrap">{ev.body}</p> : null}
+                      <p className="mt-1 app-help">
                         {ev.type} · {new Date(ev.createdAt).toLocaleString()}
                         {ev.createdBy ? ` · ${ev.createdBy.email}` : ''}
                       </p>
@@ -427,9 +427,9 @@ export default function CaseDetailPage() {
               )}
 
               {canEdit ? (
-                <form onSubmit={onAddTimelineNote} className="mt-4 flex flex-col gap-3 border-t border-zinc-100 pt-4">
+                <form onSubmit={onAddTimelineNote} className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4">
                   <label className="flex flex-col gap-2">
-                    <span className="text-sm font-medium">Add timeline note</span>
+                    <span className="app-label">Add timeline note</span>
                     <input
                       className="app-input"
                       value={timelineTitle}
@@ -451,26 +451,26 @@ export default function CaseDetailPage() {
               ) : null}
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="app-panel">
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold text-zinc-900">Documents</h2>
+                <h2 className="app-section-title">Documents</h2>
                 <a
-                  className="text-xs text-zinc-500 underline-offset-2 hover:underline"
+                  className="app-help underline-offset-2 hover:underline"
                   href={`/documents?caseId=${encodeURIComponent(item.id)}`}
                 >
                   Full list
                 </a>
               </div>
               {item.documents.length === 0 ? (
-                <p className="text-sm text-zinc-600">No documents on this case.</p>
+                <p className="text-sm text-slate-500">No documents on this case.</p>
               ) : (
                 <ul className="space-y-3 text-sm">
                   {item.documents.map((d) => (
-                    <li key={d.id} className="border-t border-zinc-100 pt-3 first:border-t-0 first:pt-0">
+                    <li key={d.id} className="border-t border-slate-100 pt-3 first:border-t-0 first:pt-0">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="font-medium text-zinc-900">{d.filename}</p>
-                          <p className="mt-1 text-xs text-zinc-500">
+                          <p className="font-medium text-slate-900">{d.filename}</p>
+                          <p className="mt-1 app-help">
                             {documentCategoryLabel(d.category)} · v{d.version ?? 1}
                           </p>
                         </div>

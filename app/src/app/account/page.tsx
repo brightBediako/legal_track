@@ -67,27 +67,27 @@ export default function AccountPage() {
       }
     >
       {!user ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error">
           Sign in to manage your account.
         </p>
       ) : (
         <form
           onSubmit={onSubmit}
-          className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+          className="flex max-w-xl flex-col gap-4 app-panel"
         >
           {mustChange ? (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <p className="app-alert-warn">
               First login: your temporary password is your phone number. Choose a new password (at
               least 8 characters) before continuing.
             </p>
           ) : null}
 
-          <p className="text-sm text-zinc-600">
-            Signed in as <span className="font-medium text-zinc-900">{user.email}</span> ({user.role})
+          <p className="text-sm text-slate-500">
+            Signed in as <span className="font-medium text-slate-900">{user.email}</span> ({user.role})
           </p>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Current password</span>
+            <span className="app-label">Current password</span>
             <input
               type="password"
               className="app-input"
@@ -99,7 +99,7 @@ export default function AccountPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">New password</span>
+            <span className="app-label">New password</span>
             <input
               type="password"
               className="app-input"
@@ -112,7 +112,7 @@ export default function AccountPage() {
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Confirm new password</span>
+            <span className="app-label">Confirm new password</span>
             <input
               type="password"
               className="app-input"
@@ -125,13 +125,13 @@ export default function AccountPage() {
           </label>
 
           {error ? (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="app-alert-error">
               {error}
             </p>
           ) : null}
 
           {success ? (
-            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            <p className="app-alert-success">
               {success}
             </p>
           ) : null}

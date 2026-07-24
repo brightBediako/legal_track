@@ -97,48 +97,51 @@ export default function NotificationsPage() {
       }
     >
       {!user ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error">
           Sign in to view notifications.
         </p>
       ) : (
         <>
-          <label className="mb-4 flex items-center gap-2 text-sm text-zinc-700">
-            <input
-              type="checkbox"
-              checked={unreadOnly}
-              onChange={(e) => setUnreadOnly(e.target.checked)}
-            />
-            Unread only
-          </label>
+          <div className="app-panel mb-6">
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={unreadOnly}
+                onChange={(e) => setUnreadOnly(e.target.checked)}
+                className="size-4 rounded border-slate-300"
+              />
+              Unread only
+            </label>
+          </div>
 
-          {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+          {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
           {error ? (
-            <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="app-alert-error mb-4">
               {error}
             </p>
           ) : null}
 
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+          <div className="app-table-wrap">
             {items.length === 0 && !loading ? (
-              <p className="px-4 py-6 text-sm text-zinc-600">No notifications yet.</p>
+              <p className="px-4 py-6 text-sm text-slate-500">No notifications yet.</p>
             ) : (
-              <ul className="divide-y divide-zinc-100">
+              <ul className="divide-y divide-slate-100">
                 {items.map((n) => {
                   const unread = !n.readAt;
                   return (
                     <li
                       key={n.id}
                       className={`flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-start sm:justify-between ${
-                        unread ? 'bg-zinc-50' : 'bg-white'
+                        unread ? 'bg-slate-50' : 'bg-white'
                       }`}
                     >
                       <div>
-                        <p className="text-sm font-medium text-zinc-900">
-                          {unread ? <span className="mr-2 inline-block size-2 rounded-full bg-zinc-900" /> : null}
+                        <p className="app-label text-slate-900">
+                          {unread ? <span className="mr-2 inline-block size-2 rounded-full bg-slate-900" /> : null}
                           {n.title}
                         </p>
-                        {n.body ? <p className="mt-1 text-sm text-zinc-600">{n.body}</p> : null}
-                        <p className="mt-1 text-xs text-zinc-500">
+                        {n.body ? <p className="mt-1 text-sm text-slate-500">{n.body}</p> : null}
+                        <p className="mt-1 app-help">
                           {n.type} · {new Date(n.createdAt).toLocaleString()}
                         </p>
                       </div>

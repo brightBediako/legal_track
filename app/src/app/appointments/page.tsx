@@ -78,9 +78,9 @@ export default function AppointmentsPage() {
         )
       }
     >
-      <div className="mb-4 grid max-w-4xl gap-4 sm:grid-cols-3">
+      <div className="app-panel mb-6 grid max-w-4xl gap-4 sm:grid-cols-3">
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Search</span>
+          <span className="app-label">Search</span>
           <input
             className="app-input"
             value={q}
@@ -89,7 +89,7 @@ export default function AppointmentsPage() {
           />
         </label>
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Type</span>
+          <span className="app-label">Type</span>
           <select className="app-select" value={type} onChange={(e) => setType(e.target.value)}>
             <option value="">All</option>
             <option value="consultation">Consultation</option>
@@ -98,7 +98,7 @@ export default function AppointmentsPage() {
           </select>
         </label>
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Status</span>
+          <span className="app-label">Status</span>
           <select className="app-select" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">All</option>
             <option value="scheduled">Scheduled</option>
@@ -108,48 +108,47 @@ export default function AppointmentsPage() {
         </label>
       </div>
 
-      {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error mb-4">
           {error}
         </p>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <table className="w-full table-auto">
-          <thead className="bg-zinc-50 text-left text-sm text-zinc-600">
+      <div className="app-table-wrap">
+        <table className="app-table">
+          <thead>
             <tr>
-              <th className="px-4 py-3 font-medium">When</th>
-              <th className="px-4 py-3 font-medium">Title</th>
-              <th className="px-4 py-3 font-medium">Type</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Client / Case</th>
+              <th>When</th>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Client / Case</th>
             </tr>
           </thead>
-          <tbody className="text-sm">
+          <tbody>
             {!loading && items.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-zinc-600" colSpan={5}>
+                <td className="text-slate-500" colSpan={5}>
                   No appointments yet.
                 </td>
               </tr>
             ) : (
               items.map((a) => (
-                <tr key={a.id} className="border-t border-zinc-200">
-                  <td className="px-4 py-3 text-zinc-700 whitespace-nowrap">
+                <tr key={a.id}>
+                  <td className="whitespace-nowrap">
                     {new Date(a.startsAt).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 font-medium">
-                    <a
-                      href={`/appointments/${a.id}`}
-                      className="text-zinc-900 underline-offset-2 hover:underline"
-                    >
+                  <td className="font-medium">
+                    <a href={`/appointments/${a.id}`} className="app-link">
                       {a.title}
                     </a>
                   </td>
-                  <td className="px-4 py-3 text-zinc-700">{a.type}</td>
-                  <td className="px-4 py-3 text-zinc-700">{a.status}</td>
-                  <td className="px-4 py-3 text-zinc-700">
+                  <td className="capitalize">{a.type}</td>
+                  <td>
+                    <span className={`app-status app-status-${a.status}`}>{a.status}</span>
+                  </td>
+                  <td>
                     {a.client?.name ?? '—'}
                     {a.case ? ` · ${a.case.title}` : ''}
                   </td>

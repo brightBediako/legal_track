@@ -115,15 +115,15 @@ export default function NewCasePage() {
     >
       <form
         onSubmit={onSubmit}
-        className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+        className="flex max-w-xl flex-col gap-4 app-panel"
       >
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Title</span>
+          <span className="app-label">Title</span>
           <input name="title" className="app-input" placeholder="Case title" required />
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Description (optional)</span>
+          <span className="app-label">Description (optional)</span>
           <textarea
             name="description"
             className="app-textarea"
@@ -132,7 +132,7 @@ export default function NewCasePage() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Status</span>
+          <span className="app-label">Status</span>
           <select name="status" className="app-select" defaultValue="open" required>
             <option value="open">Open</option>
             <option value="pending">Pending</option>
@@ -141,18 +141,18 @@ export default function NewCasePage() {
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Court date (optional)</span>
+          <span className="app-label">Court date (optional)</span>
           <input type="date" name="courtDate" className="app-input" />
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Notes (optional)</span>
+          <span className="app-label">Notes (optional)</span>
           <textarea name="notes" className="app-textarea" placeholder="Initial notes" />
         </label>
 
         {canAssign ? (
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Assigned lawyer (optional)</span>
+            <span className="app-label">Assigned lawyer (optional)</span>
             <select
               name="assigneeId"
               className="app-select"
@@ -168,13 +168,13 @@ export default function NewCasePage() {
             </select>
           </label>
         ) : isLawyer ? (
-          <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+          <p className="app-alert-info">
             New cases you create are assigned to you automatically.
           </p>
         ) : null}
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Client (optional)</span>
+          <span className="app-label">Client (optional)</span>
           <select
             name="clientId"
             className="app-select"
@@ -191,7 +191,7 @@ export default function NewCasePage() {
         </label>
 
         {error ? (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="app-alert-error">
             {error}
           </p>
         ) : null}

@@ -79,14 +79,14 @@ export default function AuditLogsPage() {
       }
     >
       {!isAdmin ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error">
           Only administrators can view audit logs.
         </p>
       ) : (
         <>
-          <div className="mb-4 grid max-w-4xl gap-4 sm:grid-cols-3">
+          <div className="app-panel mb-6 grid max-w-4xl gap-4 sm:grid-cols-3">
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Search</span>
+              <span className="app-label">Search</span>
               <input
                 className="app-input"
                 value={q}
@@ -95,7 +95,7 @@ export default function AuditLogsPage() {
               />
             </label>
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Action</span>
+              <span className="app-label">Action</span>
               <select className="app-select" value={action} onChange={(e) => setAction(e.target.value)}>
                 <option value="">All</option>
                 <option value="create">create</option>
@@ -106,7 +106,7 @@ export default function AuditLogsPage() {
               </select>
             </label>
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Entity</span>
+              <span className="app-label">Entity</span>
               <select className="app-select" value={entity} onChange={(e) => setEntity(e.target.value)}>
                 <option value="">All</option>
                 <option value="User">User</option>
@@ -117,56 +117,56 @@ export default function AuditLogsPage() {
             </label>
           </div>
 
-          {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+          {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
 
           {error ? (
-            <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="app-alert-error mb-4">
               {error}
             </p>
           ) : null}
 
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <table className="w-full table-auto">
-              <thead className="bg-zinc-50 text-left text-sm text-zinc-600">
+          <div className="app-table-wrap">
+            <table className="app-table">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 font-medium">When</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
-                  <th className="px-4 py-3 font-medium">Entity</th>
-                  <th className="px-4 py-3 font-medium">Actor</th>
-                  <th className="px-4 py-3 font-medium">Details</th>
+                  <th>When</th>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th>Actor</th>
+                  <th>Details</th>
                 </tr>
               </thead>
-              <tbody className="text-sm">
+              <tbody>
                 {!loading && logs.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-3 text-zinc-600" colSpan={5}>
+                    <td className="text-slate-500" colSpan={5}>
                       No audit events yet.
                     </td>
                   </tr>
                 ) : (
                   logs.map((log) => (
-                    <tr key={log.id} className="border-t border-zinc-200 align-top">
-                      <td className="px-4 py-3 text-zinc-700 whitespace-nowrap">
+                    <tr key={log.id} className="align-top">
+                      <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
                         {new Date(log.createdAt).toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 font-medium">{log.action}</td>
-                      <td className="px-4 py-3 text-zinc-700">
+                      <td className="font-medium">{log.action}</td>
+                      <td>
                         {log.entity}
                         {log.entityId ? (
-                          <span className="mt-1 block text-xs text-zinc-500">{log.entityId}</span>
+                          <span className="mt-1 block app-help">{log.entityId}</span>
                         ) : null}
                       </td>
-                      <td className="px-4 py-3 text-zinc-700">
+                      <td>
                         {log.user ? (
                           <>
                             {log.user.email}
-                            <span className="mt-1 block text-xs text-zinc-500">{log.user.role}</span>
+                            <span className="mt-1 block app-help">{log.user.role}</span>
                           </>
                         ) : (
                           log.userId ?? '—'
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td>
                         {log.metadata ? (
                           <button
                             type="button"
@@ -178,10 +178,10 @@ export default function AuditLogsPage() {
                             {expandedId === log.id ? 'Hide' : 'View'}
                           </button>
                         ) : (
-                          <span className="text-zinc-500">—</span>
+                          <span className="text-slate-500">—</span>
                         )}
                         {expandedId === log.id && log.metadata ? (
-                          <pre className="mt-2 max-w-md overflow-x-auto rounded-lg bg-zinc-50 p-2 text-xs text-zinc-700">
+                          <pre className="mt-2 max-w-md overflow-x-auto rounded-lg bg-slate-50 p-2 text-xs text-slate-700">
                             {JSON.stringify(log.metadata, null, 2)}
                           </pre>
                         ) : null}

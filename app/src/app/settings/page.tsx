@@ -102,21 +102,21 @@ export default function SettingsPage() {
       }
     >
       {!isAdmin ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error">
           Only administrators can manage settings and permissions.
         </p>
       ) : null}
 
-      {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
 
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error mb-4">
           {error}
         </p>
       ) : null}
 
       {success ? (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="app-alert-success mb-4">
           {success}
         </p>
       ) : null}
@@ -125,12 +125,12 @@ export default function SettingsPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <form
             onSubmit={onSave}
-            className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+            className="flex flex-col gap-4 app-panel"
           >
-            <h2 className="text-sm font-semibold text-zinc-900">System settings</h2>
+            <h2 className="app-section-title">System settings</h2>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Firm name</span>
+              <span className="app-label">Firm name</span>
               <input
                 className="app-input"
                 value={firmName}
@@ -140,7 +140,7 @@ export default function SettingsPage() {
             </label>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Support email</span>
+              <span className="app-label">Support email</span>
               <input
                 type="email"
                 className="app-input"
@@ -150,7 +150,7 @@ export default function SettingsPage() {
             </label>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Support phone</span>
+              <span className="app-label">Support phone</span>
               <input
                 className="app-input"
                 value={supportPhone}
@@ -159,7 +159,7 @@ export default function SettingsPage() {
             </label>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Timezone</span>
+              <span className="app-label">Timezone</span>
               <input
                 className="app-input"
                 value={timezone}
@@ -168,7 +168,7 @@ export default function SettingsPage() {
               />
             </label>
 
-            <p className="text-xs text-zinc-500">
+            <p className="app-help">
               Updated {new Date(settings.updatedAt).toLocaleString()}
             </p>
 
@@ -177,18 +177,18 @@ export default function SettingsPage() {
             </button>
           </form>
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-sm font-semibold text-zinc-900">Role permissions</h2>
-            <p className="mb-4 text-sm text-zinc-600">
+          <div className="app-panel">
+            <h2 className="mb-4 app-section-title">Role permissions</h2>
+            <p className="mb-4 text-sm text-slate-500">
               Permissions are role-based. Assign roles under Users; this matrix documents what each
               role can do.
             </p>
             <ul className="space-y-4">
               {roles.map((r) => (
-                <li key={r.role} className="border-t border-zinc-100 pt-4 first:border-t-0 first:pt-0">
-                  <p className="font-medium capitalize text-zinc-900">{r.role}</p>
-                  <p className="mt-1 text-xs text-zinc-500">{r.summary}</p>
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700">
+                <li key={r.role} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
+                  <p className="font-medium capitalize text-slate-900">{r.role}</p>
+                  <p className="mt-1 app-help">{r.summary}</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
                     {r.capabilities.map((c) => (
                       <li key={c}>{c}</li>
                     ))}

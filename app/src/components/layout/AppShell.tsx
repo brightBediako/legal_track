@@ -129,28 +129,45 @@ function AccountIcon(props: Readonly<IconProps>) {
   );
 }
 
-const breadcrumbLabels: Record<string, string> = {
-  dashboard: 'Dashboard',
-  clients: 'Clients',
-  cases: 'Cases',
-  appointments: 'Appointments',
-  documents: 'Documents',
-  notifications: 'Notifications',
-  users: 'Users',
-  settings: 'Settings',
-  audit: 'Audit',
-  account: 'Account',
-  upload: 'Upload',
-  new: 'New',
-  login: 'Login',
-};
-
 type AppShellProps = {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
   children: ReactNode;
 };
+
+function NavLink({
+  item,
+  active,
+  unreadCount,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  unreadCount: number;
+  onNavigate?: () => void;
+}) {
+  const showBadge = item.href === '/notifications' && unreadCount > 0;
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      className={`group flex items-center rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+        active
+          ? 'bg-white/10 text-white shadow-sm ring-1 ring-white/10'
+          : 'text-slate-300 hover:bg-white/5 hover:text-white'
+      }`}
+    >
+      <item.icon className={`mr-2.5 size-4 shrink-0 ${active ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`} />
+      <span className="flex-1">{item.label}</span>
+      {showBadge ? (
+        <span className="ml-2 rounded-full bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-900">
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
+      ) : null}
+    </Link>
+  );
+}
 
 export function AppShell({ title, subtitle, actions, children }: Readonly<AppShellProps>) {
   const pathname = usePathname();
@@ -163,8 +180,6 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [signingOut, setSigningOut] = useState(false);
-  const segments = pathname.split('/').filter(Boolean);
-  const firstSegment = segments.find(() => true) ?? 'dashboard';
   const isAdmin = authUser?.role === 'admin';
   const isClient = authUser?.role === 'client';
   const mustChangePassword = Boolean(authUser?.mustChangePassword);
@@ -236,39 +251,30 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
 
   if (!hydrated || !isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-zinc-600">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--app-bg)] text-sm text-slate-600">
         {hydrated ? 'Redirecting to sign in…' : 'Loading…'}
       </div>
     );
   }
 
-  let pageIcon = <DashboardIcon className="size-4" />;
-  if (firstSegment === 'clients') {
-    pageIcon = <ClientsIcon className="size-4" />;
-  } else if (firstSegment === 'cases') {
-    pageIcon = <CasesIcon className="size-4" />;
-  } else if (firstSegment === 'appointments') {
-    pageIcon = <AppointmentsIcon className="size-4" />;
-  } else if (firstSegment === 'documents') {
-    pageIcon = <DocumentsIcon className="size-4" />;
-  } else if (firstSegment === 'notifications') {
-    pageIcon = <NotificationsIcon className="size-4" />;
-  } else if (firstSegment === 'users') {
-    pageIcon = <UsersIcon className="size-4" />;
-  } else if (firstSegment === 'audit') {
-    pageIcon = <AuditIcon className="size-4" />;
-  } else if (firstSegment === 'account') {
-    pageIcon = <AccountIcon className="size-4" />;
-  }
+  const sidebarBrand = (
+    <div className="border-b border-white/10 px-5 py-5">
+      <p className="text-[11px] font-semibold tracking-[0.2em] text-slate-400 uppercase">LegalTrack</p>
+      <p className="mt-1 text-sm font-semibold text-white">Operations</p>
+    </div>
+  );
 
-  const crumbs = segments.map((segment, idx, arr) => ({
-    href: `/${arr.slice(0, idx + 1).join('/')}`,
-    label: breadcrumbLabels[segment] ?? segment.replaceAll('-', ' '),
-    isLast: idx === arr.length - 1,
-  }));
+  const sidebarUser = (
+    <div className="border-t border-white/10 p-4">
+      <div className="rounded-xl bg-white/5 px-3 py-3 ring-1 ring-white/10">
+        <p className="truncate text-sm font-medium text-white">{authUser?.email}</p>
+        <p className="mt-0.5 text-xs capitalize text-slate-400">{authUser?.role}</p>
+      </div>
+    </div>
+  );
 
   const headerActions = (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       {actions}
       <button type="button" onClick={onSignOut} disabled={signingOut} className="app-btn-muted">
         {signingOut ? 'Signing out…' : 'Sign out'}
@@ -277,55 +283,33 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-zinc-900">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-zinc-200 bg-white lg:block">
+    <div className="min-h-screen bg-[var(--app-bg)] text-slate-900">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-[var(--app-sidebar)] lg:block">
         <div className="flex h-full flex-col">
-          <div className="border-b border-zinc-200 px-5 py-5">
-            <p className="text-sm font-semibold text-zinc-900">LegalTrack</p>
-            <p className="mt-1 text-xs text-zinc-500">Operations Dashboard</p>
-          </div>
-          <nav className="flex-1 px-3 py-4" aria-label="Sidebar Navigation">
-            <ul className="space-y-1.5">
+          {sidebarBrand}
+          <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Sidebar Navigation">
+            <ul className="space-y-1">
               {navItems.map((item) => {
                 const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                const showBadge = item.href === '/notifications' && unreadCount > 0;
                 return (
                   <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className={`flex items-center rounded-lg px-3 py-2 text-sm transition-colors ${
-                        active
-                          ? 'bg-zinc-900 text-white'
-                          : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900'
-                      }`}
-                    >
-                      <item.icon className="mr-2.5 size-4 shrink-0" />
-                      <span className="flex-1">{item.label}</span>
-                      {showBadge ? (
-                        <span
-                          className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-                            active ? 'bg-white text-zinc-900' : 'bg-zinc-900 text-white'
-                          }`}
-                        >
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      ) : null}
-                    </Link>
+                    <NavLink item={item} active={active} unreadCount={unreadCount} />
                   </li>
                 );
               })}
             </ul>
           </nav>
+          {sidebarUser}
         </div>
       </aside>
 
-      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/95 backdrop-blur lg:ml-64">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/80 backdrop-blur-md lg:ml-64">
+        <div className="mx-auto flex w-full max-w-7xl items-start justify-between gap-4 px-4 py-4 sm:px-6">
+          <div className="flex min-w-0 items-start gap-3">
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
-              className="app-btn-muted px-3 lg:hidden"
+              className="app-btn-muted mt-0.5 px-3 lg:hidden"
               aria-label="Toggle sidebar navigation"
               aria-expanded={menuOpen}
               aria-controls="mobile-sidebar"
@@ -334,90 +318,51 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
                 <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.6" />
               </svg>
             </button>
-            <div>
-              <div className="mb-0.5 flex items-center gap-1.5 text-xs text-zinc-500">
-                <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
-                  {pageIcon}
-                  Module
-                </span>
-                {crumbs.length > 0 ? (
-                  <nav aria-label="Breadcrumb">
-                    <ol className="flex items-center gap-1">
-                      {crumbs.map((crumb) => (
-                        <li key={crumb.href} className="flex items-center gap-1">
-                          {crumb.isLast ? (
-                            <span className="font-medium text-zinc-700">{crumb.label}</span>
-                          ) : (
-                            <Link href={crumb.href} className="hover:text-zinc-700">
-                              {crumb.label}
-                            </Link>
-                          )}
-                          {crumb.isLast ? null : <span aria-hidden="true">/</span>}
-                        </li>
-                      ))}
-                    </ol>
-                  </nav>
-                ) : null}
-              </div>
-              <h1 className="text-lg font-semibold tracking-tight text-zinc-900">{title}</h1>
-              {subtitle ? <p className="text-xs text-zinc-500">{subtitle}</p> : null}
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-semibold tracking-tight text-slate-900">{title}</h1>
+              {subtitle ? <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p> : null}
             </div>
           </div>
-          <div className="flex items-center gap-2">{headerActions}</div>
+          {headerActions}
         </div>
       </header>
 
       {menuOpen ? (
-        <div className="fixed inset-0 z-20 lg:hidden">
+        <div className="fixed inset-0 z-40 lg:hidden">
           <button
             type="button"
-            className="absolute inset-0 h-full w-full bg-black/30"
+            className="absolute inset-0 h-full w-full bg-slate-950/50 backdrop-blur-[2px]"
             onClick={() => setMenuOpen(false)}
             aria-label="Close sidebar navigation"
           />
           <nav
             id="mobile-sidebar"
-            className="relative z-10 h-full w-64 border-r border-zinc-200 bg-white p-4"
+            className="relative z-10 flex h-full w-72 flex-col bg-[var(--app-sidebar)]"
             aria-label="Mobile Sidebar Navigation"
           >
-            <p className="mb-4 text-sm font-semibold text-zinc-900">Navigation</p>
-            <ul className="space-y-1.5">
+            {sidebarBrand}
+            <ul className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
               {navItems.map((item) => {
                 const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                const showBadge = item.href === '/notifications' && unreadCount > 0;
                 return (
                   <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={() => setMenuOpen(false)}
-                      className={`flex items-center rounded-lg px-3 py-2 text-sm transition-colors ${
-                        active
-                          ? 'bg-zinc-900 text-white'
-                          : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900'
-                      }`}
-                    >
-                      <item.icon className="mr-2.5 size-4 shrink-0" />
-                      <span className="flex-1">{item.label}</span>
-                      {showBadge ? (
-                        <span
-                          className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-                            active ? 'bg-white text-zinc-900' : 'bg-zinc-900 text-white'
-                          }`}
-                        >
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      ) : null}
-                    </Link>
+                    <NavLink
+                      item={item}
+                      active={active}
+                      unreadCount={unreadCount}
+                      onNavigate={() => setMenuOpen(false)}
+                    />
                   </li>
                 );
               })}
             </ul>
+            {sidebarUser}
           </nav>
         </div>
       ) : null}
 
       <main className="lg:ml-64">
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">{children}</div>
+        <div className="app-page-enter mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">{children}</div>
       </main>
     </div>
   );

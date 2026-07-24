@@ -131,9 +131,9 @@ export default function DocumentsPage() {
         </div>
       }
     >
-      <div className="mb-4 grid max-w-4xl gap-4 sm:grid-cols-3">
+      <div className="app-panel mb-6 grid max-w-4xl gap-4 sm:grid-cols-3">
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Case</span>
+          <span className="app-label">Case</span>
           <select className="app-select" value={caseId} onChange={(e) => setCaseId(e.target.value)}>
             <option value="">All cases</option>
             {cases.map((c) => (
@@ -144,7 +144,7 @@ export default function DocumentsPage() {
           </select>
         </label>
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Category</span>
+          <span className="app-label">Category</span>
           <select
             className="app-select"
             value={category}
@@ -163,71 +163,69 @@ export default function DocumentsPage() {
             type="checkbox"
             checked={showAllVersions}
             onChange={(e) => setShowAllVersions(e.target.checked)}
+            className="size-4 rounded border-slate-300"
           />
-          <span className="text-sm font-medium">Show all versions</span>
+          <span className="app-label">Show all versions</span>
         </label>
       </div>
 
-      {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
 
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error mb-4">
           {error}
         </p>
       ) : null}
 
       {actionError ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error mb-4">
           {actionError}
         </p>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <table className="w-full table-auto">
-          <thead className="bg-zinc-50 text-left text-sm text-zinc-600">
+      <div className="app-table-wrap">
+        <table className="app-table">
+          <thead>
             <tr>
-              <th className="px-4 py-3 font-medium">Filename</th>
-              <th className="px-4 py-3 font-medium">Category</th>
-              <th className="px-4 py-3 font-medium">Version</th>
-              <th className="px-4 py-3 font-medium">Case</th>
-              <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
+              <th>Filename</th>
+              <th>Category</th>
+              <th>Version</th>
+              <th>Case</th>
+              <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody className="text-sm">
+          <tbody>
             {!loading && documents.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-zinc-600" colSpan={6}>
+                <td className="text-slate-500" colSpan={6}>
                   No documents yet.
                 </td>
               </tr>
             ) : (
               documents.map((doc) => (
-                <tr key={doc.id} className="border-t border-zinc-200">
-                  <td className="px-4 py-3 font-medium">{doc.filename}</td>
-                  <td className="px-4 py-3 text-zinc-700">{documentCategoryLabel(doc.category)}</td>
-                  <td className="px-4 py-3 text-zinc-700">
+                <tr key={doc.id}>
+                  <td className="font-medium">{doc.filename}</td>
+                  <td>{documentCategoryLabel(doc.category)}</td>
+                  <td>
                     v{doc.version}
                     {!doc.isLatest ? (
-                      <span className="ml-1 text-xs text-zinc-500">(old)</span>
+                      <span className="ml-1 app-help">(old)</span>
                     ) : null}
                   </td>
-                  <td className="px-4 py-3 text-zinc-700">
+                  <td>
                     {doc.case ? (
-                      <a
-                        href={`/cases/${doc.case.id}`}
-                        className="underline-offset-2 hover:underline"
-                      >
+                      <a href={`/cases/${doc.case.id}`} className="app-link">
                         {doc.case.title}
                       </a>
                     ) : (
                       '—'
                     )}
                   </td>
-                  <td className="px-4 py-3 text-zinc-700">
+                  <td>
                     {new Date(doc.createdAt).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3">
+                  <td>
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"

@@ -60,41 +60,41 @@ export default function NewUserPage() {
       }
     >
       {!isAdmin ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error">
           Only administrators can create users and assign roles.
         </p>
       ) : (
         <form
           onSubmit={onSubmit}
-          className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+          className="flex max-w-xl flex-col gap-4 app-panel"
         >
-          <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
+          <p className="app-alert-info">
             Staff sign in with their <span className="font-medium">email</span>. The{' '}
             <span className="font-medium">phone number is the temporary password</span> and must be
             changed on first login. Client portal accounts are created when registering a client.
           </p>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Name</span>
+            <span className="app-label">Name</span>
             <input name="name" className="app-input" placeholder="Full name" required />
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Email</span>
+            <span className="app-label">Email</span>
             <input type="email" name="email" className="app-input" required />
-            <span className="text-xs text-zinc-500">Login username</span>
+            <span className="app-help">Login username</span>
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Phone</span>
+            <span className="app-label">Phone</span>
             <input name="phone" className="app-input" placeholder="0244123456" minLength={8} required />
-            <span className="text-xs text-zinc-500">
+            <span className="app-help">
               Temporary password (at least 8 characters)
             </span>
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Role</span>
+            <span className="app-label">Role</span>
             <select name="role" className="app-select" defaultValue="clerk" required>
               <option value="admin">Admin</option>
               <option value="lawyer">Lawyer</option>
@@ -103,7 +103,7 @@ export default function NewUserPage() {
           </label>
 
           {error ? (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="app-alert-error">
               {error}
             </p>
           ) : null}

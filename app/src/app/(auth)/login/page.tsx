@@ -103,14 +103,14 @@ function LoginForm() {
 
   if (!hydrated || (accessToken && user)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-zinc-600">
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-slate-500">
         Loading…
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0b1220] text-zinc-900">
+    <div className="relative min-h-screen overflow-hidden bg-[#0b1220] text-slate-900">
       <div
         className="pointer-events-none absolute inset-0 opacity-90"
         style={{
@@ -157,19 +157,19 @@ function LoginForm() {
             className="rounded-2xl border border-white/10 bg-white/95 p-8 shadow-2xl shadow-black/30 backdrop-blur-sm"
           >
             <div className="mb-6">
-              <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">Sign in</h2>
-              <p className="mt-1.5 text-sm text-zinc-600">
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Sign in</h2>
+              <p className="mt-1.5 text-sm text-slate-500">
                 Enter your firm credentials to open the dashboard.
               </p>
             </div>
 
             <div className="flex flex-col gap-4">
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium text-zinc-800">Email</span>
+                <span className="app-label text-slate-800">Email</span>
                 <input
                   type="email"
                   name="email"
-                  className="app-input h-12 border-zinc-200 bg-zinc-50/80 focus:border-zinc-900 focus:bg-white"
+                  className="app-input h-12 border-slate-200 bg-slate-50/80 focus:border-slate-900 focus:bg-white"
                   placeholder="you@firm.com"
                   autoComplete="email"
                   required
@@ -177,12 +177,12 @@ function LoginForm() {
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-medium text-zinc-800">Password</span>
+                <span className="app-label text-slate-800">Password</span>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="password"
-                    className="app-input h-12 w-full border-zinc-200 bg-zinc-50/80 pr-12 focus:border-zinc-900 focus:bg-white"
+                    className="app-input h-12 w-full border-slate-200 bg-slate-50/80 pr-12 focus:border-slate-900 focus:bg-white"
                     placeholder="Enter your password"
                     autoComplete="current-password"
                     required
@@ -190,7 +190,7 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute top-1/2 right-2.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+                    className="absolute top-1/2 right-2.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     aria-pressed={showPassword}
                   >
@@ -200,7 +200,7 @@ function LoginForm() {
               </label>
 
               {error ? (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                <p className="app-alert-error">
                   {error}
                 </p>
               ) : null}
@@ -208,13 +208,13 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="app-btn-primary mt-2 h-12 w-full text-[15px] shadow-sm shadow-zinc-900/20"
+                className="app-btn-primary mt-2 h-12 w-full text-[15px] shadow-sm shadow-slate-900/20"
               >
                 {submitting ? 'Signing in…' : 'Sign in'}
               </button>
             </div>
 
-            <p className="mt-6 text-center text-xs leading-5 text-zinc-500">
+            <p className="mt-6 text-center text-xs leading-5 text-slate-500">
               Authorized personnel only. Activity may be audited for compliance.
             </p>
           </form>
@@ -228,7 +228,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-zinc-600">
+        <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-slate-500">
           Loading…
         </div>
       }

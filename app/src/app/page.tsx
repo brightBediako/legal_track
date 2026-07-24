@@ -25,24 +25,49 @@ export default function Home() {
 
   if (!hydrated || (accessToken && user)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-zinc-600">
+      <div className="flex min-h-screen items-center justify-center bg-[#0b1220] text-sm text-slate-400">
         Loading…
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
-      <main className="w-full max-w-xl rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <p className="text-sm font-medium text-zinc-500">LegalTrack</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">Operations App</h1>
-        <p className="mt-3 text-sm leading-7 text-zinc-600">
-          Access client management, case workflows, and document uploads from a single workspace.
-        </p>
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Link href="/login" className="app-btn-primary">
-            Sign in
-          </Link>
+    <div className="relative min-h-screen overflow-hidden bg-[#0b1220] text-slate-900">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-90"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 60% at 15% 20%, rgba(148,163,184,0.22), transparent 55%), radial-gradient(ellipse 70% 50% at 90% 80%, rgba(71,85,105,0.35), transparent 50%), linear-gradient(160deg, #0b1220 0%, #111827 45%, #1e293b 100%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.12]"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
+
+      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center px-6 py-16 text-center">
+        <div className="login-fade-up">
+          <p className="text-sm font-semibold tracking-[0.18em] text-slate-300 uppercase">
+            LegalTrack
+          </p>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+            Operations for modern legal teams
+          </h1>
+          <p className="mx-auto mt-4 max-w-lg text-base leading-7 text-slate-300">
+            Client records, case workflows, documents, and appointments in one secure workspace.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/login"
+              className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-6 text-sm font-medium text-slate-900 shadow-lg shadow-black/20 transition hover:bg-slate-100"
+            >
+              Sign in
+            </Link>
+          </div>
         </div>
       </main>
     </div>

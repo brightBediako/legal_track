@@ -147,16 +147,16 @@ export default function ClientDetailPage() {
         </div>
       }
     >
-      {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
 
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error mb-4">
           {error}
         </p>
       ) : null}
 
       {success ? (
-        <p className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="app-alert-success mb-4">
           {success}
         </p>
       ) : null}
@@ -165,17 +165,17 @@ export default function ClientDetailPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <form
             onSubmit={onSave}
-            className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
+            className="flex flex-col gap-4 app-panel"
           >
-            <h2 className="text-sm font-semibold text-zinc-900">Edit profile</h2>
+            <h2 className="app-section-title">Edit profile</h2>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Name</span>
+              <span className="app-label">Name</span>
               <input className="app-input" value={name} onChange={(e) => setName(e.target.value)} required />
             </label>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Email</span>
+              <span className="app-label">Email</span>
               <input
                 type="email"
                 className="app-input"
@@ -183,11 +183,11 @@ export default function ClientDetailPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <span className="text-xs text-zinc-500">Portal login username</span>
+              <span className="app-help">Portal login username</span>
             </label>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Phone</span>
+              <span className="app-label">Phone</span>
               <input
                 className="app-input"
                 value={phone}
@@ -195,13 +195,13 @@ export default function ClientDetailPage() {
                 minLength={8}
                 required
               />
-              <span className="text-xs text-zinc-500">
+              <span className="app-help">
                 Temporary password at registration (changing phone here does not reset the password)
               </span>
             </label>
 
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Location</span>
+              <span className="app-label">Location</span>
               <input
                 className="app-input"
                 value={location}
@@ -211,11 +211,11 @@ export default function ClientDetailPage() {
             </label>
 
             {client.portalUser ? (
-              <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
+              <div className="app-alert-info">
                 <p>
                   Portal account: <span className="font-medium">{client.portalUser.email}</span>
                 </p>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 app-help">
                   {client.portalUser.mustChangePassword
                     ? 'Awaiting first-login password change'
                     : 'Password has been updated by the client'}
@@ -251,28 +251,28 @@ export default function ClientDetailPage() {
             ) : null}
           </form>
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-sm font-semibold text-zinc-900">History</h2>
+          <div className="app-panel">
+            <h2 className="mb-4 app-section-title">History</h2>
             {client.cases.length === 0 ? (
-              <p className="text-sm text-zinc-600">No linked cases yet.</p>
+              <p className="text-sm text-slate-500">No linked cases yet.</p>
             ) : (
               <ul className="flex flex-col gap-4">
                 {client.cases.map((c) => (
-                  <li key={c.id} className="border-t border-zinc-100 pt-4 first:border-t-0 first:pt-0">
+                  <li key={c.id} className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
                     <a
                       href={`/cases/${c.id}`}
-                      className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                      className="font-medium text-slate-900 underline-offset-2 hover:underline"
                     >
                       {c.title}
                     </a>
-                    <p className="mt-1 text-xs text-zinc-500">
+                    <p className="mt-1 app-help">
                       Status: {c.status}
                       {c.courtDate
                         ? ` · Court: ${new Date(c.courtDate).toLocaleDateString()}`
                         : ''}
                     </p>
                     {c.documents.length > 0 ? (
-                      <ul className="mt-2 space-y-1 text-sm text-zinc-700">
+                      <ul className="mt-2 space-y-1 text-sm text-slate-700">
                         {c.documents.map((d) => (
                           <li key={d.id}>
                             <a
@@ -285,7 +285,7 @@ export default function ClientDetailPage() {
                         ))}
                       </ul>
                     ) : (
-                      <p className="mt-2 text-xs text-zinc-500">No documents on this case.</p>
+                      <p className="mt-2 app-help">No documents on this case.</p>
                     )}
                   </li>
                 ))}

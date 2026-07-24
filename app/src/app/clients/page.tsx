@@ -59,9 +59,9 @@ export default function ClientsPage() {
         </div>
       }
     >
-      <div className="mb-4 max-w-md">
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Search</span>
+      <div className="app-panel mb-6">
+        <label className="flex max-w-md flex-col gap-2">
+          <span className="app-label">Search</span>
           <input
             className="app-input"
             value={q}
@@ -71,44 +71,48 @@ export default function ClientsPage() {
         </label>
       </div>
 
-      {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
+      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
 
       {error ? (
-        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="app-alert-error mb-4">
           {error}
         </p>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <table className="w-full table-auto">
-          <thead className="bg-zinc-50 text-left text-sm text-zinc-600">
+      <div className="app-table-wrap">
+        <table className="app-table">
+          <thead>
             <tr>
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Phone</th>
-              <th className="px-4 py-3 font-medium">Location</th>
-              <th className="px-4 py-3 font-medium">Status</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Location</th>
+              <th>Status</th>
             </tr>
           </thead>
-          <tbody className="text-sm">
+          <tbody>
             {!loading && clients.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-zinc-600" colSpan={5}>
+                <td className="text-slate-500" colSpan={5}>
                   No clients yet.
                 </td>
               </tr>
             ) : (
               clients.map((c) => (
-                <tr key={c.id} className="border-t border-zinc-200">
-                  <td className="px-4 py-3 font-medium">
-                    <a className="text-zinc-900 underline-offset-2 hover:underline" href={`/clients/${c.id}`}>
+                <tr key={c.id}>
+                  <td className="font-medium">
+                    <a className="app-link" href={`/clients/${c.id}`}>
                       {c.name}
                     </a>
                   </td>
-                  <td className="px-4 py-3 text-zinc-700">{c.email ?? '—'}</td>
-                  <td className="px-4 py-3 text-zinc-700">{c.phone ?? '—'}</td>
-                  <td className="px-4 py-3 text-zinc-700">{c.location ?? '—'}</td>
-                  <td className="px-4 py-3 text-zinc-700">{c.isActive ? 'Active' : 'Inactive'}</td>
+                  <td>{c.email ?? '—'}</td>
+                  <td>{c.phone ?? '—'}</td>
+                  <td>{c.location ?? '—'}</td>
+                  <td>
+                    <span className={`app-status ${c.isActive ? 'app-status-active' : 'app-status-inactive'}`}>
+                      {c.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
                 </tr>
               ))
             )}
