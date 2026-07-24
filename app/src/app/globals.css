@@ -53,3 +53,22 @@ body {
 .app-btn-muted {
   @apply inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 hover:text-zinc-900;
 }
+
+@keyframes login-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-fade-up {
+  animation: login-fade-up 0.55s ease-out both;
+}
+
+.login-fade-up-delay {
+  animation: login-fade-up 0.65s ease-out 0.12s both;
+}

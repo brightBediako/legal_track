@@ -8,7 +8,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 const CASE_STATUSES = ['open', 'pending', 'closed'] as const;
 const ASSIGNABLE_ROLES: Role[] = ['admin', 'lawyer'];
 
-const assigneeSelect = { id: true, email: true, role: true } as const;
+const assigneeSelect = { id: true, name: true, email: true, role: true } as const;
 const timelineSelect = {
   id: true,
   type: true,

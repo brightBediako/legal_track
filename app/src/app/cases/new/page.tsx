@@ -13,6 +13,7 @@ type Client = {
 
 type AssigneeOption = {
   id: string;
+  name?: string | null;
   email: string;
   role: string;
 };
@@ -161,7 +162,7 @@ export default function NewCasePage() {
               <option value="">Unassigned</option>
               {assignees.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.email} ({a.role})
+                  {a.name ? `${a.name} (${a.email})` : a.email} ({a.role})
                 </option>
               ))}
             </select>

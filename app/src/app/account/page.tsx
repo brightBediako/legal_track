@@ -77,8 +77,8 @@ export default function AccountPage() {
         >
           {mustChange ? (
             <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-              First login: your temporary password is the phone number on your client profile. Choose
-              a new password (at least 8 characters) before continuing.
+              First login: your temporary password is your phone number. Choose a new password (at
+              least 8 characters) before continuing.
             </p>
           ) : null}
 

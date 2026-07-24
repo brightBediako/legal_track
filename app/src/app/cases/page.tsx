@@ -18,7 +18,7 @@ type CaseItem = {
   createdAt: string;
 };
 
-type AssigneeOption = { id: string; email: string; role: string };
+type AssigneeOption = { id: string; name?: string | null; email: string; role: string };
 
 export default function CasesPage() {
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
@@ -135,7 +135,7 @@ export default function CasesPage() {
               <option value="">All</option>
               {assignees.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.email}
+                  {a.name ? `${a.name} (${a.email})` : a.email}
                 </option>
               ))}
             </select>

@@ -14,7 +14,7 @@ export class ClientsService {
   ) {}
 
   async create(
-    input: { name: string; email?: string; phone?: string },
+    input: { name: string; email?: string; phone?: string; location?: string },
     actorUserId?: string,
   ) {
     const name = input.name?.trim();
@@ -24,6 +24,7 @@ export class ClientsService {
 
     const email = this.normalizeEmail(input.email);
     const phone = this.normalizePhone(input.phone);
+    const location = this.normalizeLocation(input.location);
 
     const existingUser = await this.prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -36,12 +37,14 @@ export class ClientsService {
 
     const client = await this.prisma.$transaction(async (tx) => {
       const created = await tx.client.create({
-        data: { name, email, phone },
+        data: { name, email, phone, location },
       });
 
       await tx.user.create({
         data: {
+          name,
           email,
+          phone,
           password: passwordHash,
           role: 'client',
           mustChangePassword: true,
@@ -56,6 +59,7 @@ export class ClientsService {
       name: client.name,
       portalAccount: true,
       email,
+      location,
     });
 
     return {
@@ -78,6 +82,7 @@ export class ClientsService {
             { name: { contains: q, mode: 'insensitive' } },
             { email: { contains: q, mode: 'insensitive' } },
             { phone: { contains: q, mode: 'insensitive' } },
+            { location: { contains: q, mode: 'insensitive' } },
           ],
         }
       : {};
@@ -87,7 +92,7 @@ export class ClientsService {
       orderBy: { createdAt: 'desc' },
       include: {
         portalUser: {
-          select: { id: true, email: true, mustChangePassword: true },
+          select: { id: true, email: true, name: true, phone: true, mustChangePassword: true },
         },
       },
     });
@@ -137,6 +142,7 @@ export class ClientsService {
       name?: string;
       email?: string | null;
       phone?: string | null;
+      location?: string | null;
       isActive?: boolean;
     },
     actorUserId?: string,
@@ -148,11 +154,13 @@ export class ClientsService {
     if (!existing) throw new NotFoundException('client not found');
 
     const data: Prisma.ClientUpdateInput = {};
+    const portalPatch: Prisma.UserUpdateInput = {};
 
     if (input.name !== undefined) {
       const name = input.name.trim();
       if (!name) throw new BadRequestException('name is required');
       data.name = name;
+      portalPatch.name = name;
     }
 
     if (input.email !== undefined) {
@@ -169,10 +177,7 @@ export class ClientsService {
         if (clash && clash.id !== existing.portalUser.id) {
           throw new BadRequestException('email is already registered to another user');
         }
-        await this.prisma.user.update({
-          where: { id: existing.portalUser.id },
-          data: { email },
-        });
+        portalPatch.email = email;
       }
       data.email = email;
     }
@@ -182,7 +187,20 @@ export class ClientsService {
       if (!phone) {
         throw new BadRequestException('phone is required for portal clients');
       }
+      if (phone.length < 8) {
+        throw new BadRequestException('phone must be at least 8 characters');
+      }
       data.phone = phone;
+      portalPatch.phone = phone;
+    }
+
+    if (input.location !== undefined) {
+      const location =
+        typeof input.location === 'string' ? input.location.trim() : input.location;
+      if (!location) {
+        throw new BadRequestException('location is required');
+      }
+      data.location = location;
     }
 
     if (input.isActive !== undefined) {
@@ -193,14 +211,22 @@ export class ClientsService {
       throw new BadRequestException('no fields to update');
     }
 
-    const client = await this.prisma.client.update({
-      where: { id },
-      data,
-      include: {
-        portalUser: {
-          select: { id: true, email: true, mustChangePassword: true },
+    const client = await this.prisma.$transaction(async (tx) => {
+      if (existing.portalUser && Object.keys(portalPatch).length > 0) {
+        await tx.user.update({
+          where: { id: existing.portalUser.id },
+          data: portalPatch,
+        });
+      }
+      return tx.client.update({
+        where: { id },
+        data,
+        include: {
+          portalUser: {
+            select: { id: true, email: true, name: true, phone: true, mustChangePassword: true },
+          },
         },
-      },
+      });
     });
 
     await this.audit.logUpdate('Client', client.id, actorUserId, {
@@ -263,6 +289,14 @@ export class ClientsService {
       throw new BadRequestException(
         'phone must be at least 8 characters (used as the temporary password)',
       );
+    }
+    return value;
+  }
+
+  private normalizeLocation(location?: string) {
+    const value = location?.trim();
+    if (!value) {
+      throw new BadRequestException('location is required');
     }
     return value;
   }

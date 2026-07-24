@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode, SVGProps } from 'react';
 import { useAuthStore } from '../../store/auth.store';
-import { apiGet } from '../../lib/api';
+import { apiGet, apiLogout } from '../../lib/api';
 
 type NavItem = {
   href: string;
@@ -156,18 +156,30 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
   const pathname = usePathname();
   const router = useRouter();
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const accessToken = useAuthStore((s) => s.accessToken);
   const authUser = useAuthStore((s) => s.user);
+  const clear = useAuthStore((s) => s.clear);
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [signingOut, setSigningOut] = useState(false);
   const segments = pathname.split('/').filter(Boolean);
   const firstSegment = segments.find(() => true) ?? 'dashboard';
   const isAdmin = authUser?.role === 'admin';
   const isClient = authUser?.role === 'client';
   const mustChangePassword = Boolean(authUser?.mustChangePassword);
+  const isAuthenticated = Boolean(accessToken && authUser);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (isAuthenticated) return;
+    const next = encodeURIComponent(pathname || '/dashboard');
+    router.replace(`/login?next=${next}`);
+  }, [hydrated, isAuthenticated, pathname, router]);
 
   useEffect(() => {
     if (!mustChangePassword) return;
@@ -200,6 +212,18 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
     };
   }, [authUser?.id, pathname, mustChangePassword]);
 
+  async function onSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await apiLogout();
+    } finally {
+      clear();
+      router.replace('/login');
+      setSigningOut(false);
+    }
+  }
+
   const navItems = useMemo(
     () =>
       baseNavItems.filter((item) => {
@@ -209,6 +233,14 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
       }),
     [isAdmin, isClient],
   );
+
+  if (!hydrated || !isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-zinc-600">
+        {hydrated ? 'Redirecting to sign in…' : 'Loading…'}
+      </div>
+    );
+  }
 
   let pageIcon = <DashboardIcon className="size-4" />;
   if (firstSegment === 'clients') {
@@ -234,6 +266,15 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
     label: breadcrumbLabels[segment] ?? segment.replaceAll('-', ' '),
     isLast: idx === arr.length - 1,
   }));
+
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      {actions}
+      <button type="button" onClick={onSignOut} disabled={signingOut} className="app-btn-muted">
+        {signingOut ? 'Signing out…' : 'Sign out'}
+      </button>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 text-zinc-900">
@@ -322,7 +363,7 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
               {subtitle ? <p className="text-xs text-zinc-500">{subtitle}</p> : null}
             </div>
           </div>
-          <div className="flex items-center gap-2">{actions}</div>
+          <div className="flex items-center gap-2">{headerActions}</div>
         </div>
       </header>
 

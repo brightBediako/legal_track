@@ -10,6 +10,7 @@ type Client = {
   name: string;
   email?: string | null;
   phone?: string | null;
+  location?: string | null;
   isActive: boolean;
   createdAt: string;
 };
@@ -65,7 +66,7 @@ export default function ClientsPage() {
             className="app-input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Name, email, or phone"
+            placeholder="Name, email, phone, or location"
           />
         </label>
       </div>
@@ -85,13 +86,14 @@ export default function ClientsPage() {
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Phone</th>
+              <th className="px-4 py-3 font-medium">Location</th>
               <th className="px-4 py-3 font-medium">Status</th>
             </tr>
           </thead>
           <tbody className="text-sm">
             {!loading && clients.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-zinc-600" colSpan={4}>
+                <td className="px-4 py-3 text-zinc-600" colSpan={5}>
                   No clients yet.
                 </td>
               </tr>
@@ -105,6 +107,7 @@ export default function ClientsPage() {
                   </td>
                   <td className="px-4 py-3 text-zinc-700">{c.email ?? '—'}</td>
                   <td className="px-4 py-3 text-zinc-700">{c.phone ?? '—'}</td>
+                  <td className="px-4 py-3 text-zinc-700">{c.location ?? '—'}</td>
                   <td className="px-4 py-3 text-zinc-700">{c.isActive ? 'Active' : 'Inactive'}</td>
                 </tr>
               ))

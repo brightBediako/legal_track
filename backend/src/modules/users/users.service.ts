@@ -8,7 +8,9 @@ const STAFF_ROLES: Role[] = ['admin', 'lawyer', 'clerk'];
 const BCRYPT_ROUNDS = 10;
 const userPublicSelect = {
   id: true,
+  name: true,
   email: true,
+  phone: true,
   role: true,
   clientId: true,
   mustChangePassword: true,
@@ -34,7 +36,11 @@ export class UsersService {
     }
 
     if (q) {
-      where.email = { contains: q, mode: 'insensitive' };
+      where.OR = [
+        { email: { contains: q, mode: 'insensitive' } },
+        { name: { contains: q, mode: 'insensitive' } },
+        { phone: { contains: q, mode: 'insensitive' } },
+      ];
     }
 
     return this.prisma.user.findMany({
@@ -47,8 +53,8 @@ export class UsersService {
   async listAssignable() {
     return this.prisma.user.findMany({
       where: { role: { in: ['admin', 'lawyer'] } },
-      orderBy: { email: 'asc' },
-      select: { id: true, email: true, role: true },
+      orderBy: [{ name: 'asc' }, { email: 'asc' }],
+      select: { id: true, name: true, email: true, phone: true, role: true },
     });
   }
 
@@ -62,45 +68,53 @@ export class UsersService {
   }
 
   async create(
-    input: { email: string; password: string; role: string },
+    input: { name: string; email: string; phone: string; role: string },
     actorUserId?: string,
   ) {
+    const name = this.normalizeName(input.name);
     const email = this.normalizeEmail(input.email);
-    const password = input.password;
+    const phone = this.normalizePhone(input.phone);
     const role = this.parseStaffRole(input.role);
-
-    if (!password || password.length < 8) {
-      throw new BadRequestException('password must be at least 8 characters');
-    }
 
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new BadRequestException('email is already registered');
     }
 
-    const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    const hash = await bcrypt.hash(phone, BCRYPT_ROUNDS);
     const user = await this.prisma.user.create({
       data: {
+        name,
         email,
+        phone,
         password: hash,
         role,
-        mustChangePassword: false,
+        mustChangePassword: true,
       },
       select: userPublicSelect,
     });
 
     await this.audit.logCreate('User', user.id, actorUserId, {
       email: user.email,
+      name: user.name,
       role: user.role,
+      temporaryPassword: 'phone',
     });
 
-    return user;
+    return {
+      ...user,
+      temporaryPassword: 'phone',
+      message:
+        'Staff account created. Login with email; temporary password is the phone number. Password change is required on first login.',
+    };
   }
 
   async update(
     id: string,
     input: {
+      name?: string;
       email?: string;
+      phone?: string;
       role?: string;
       password?: string;
     },
@@ -117,6 +131,10 @@ export class UsersService {
 
     const data: Prisma.UserUpdateInput = {};
 
+    if (input.name !== undefined) {
+      data.name = this.normalizeName(input.name);
+    }
+
     if (input.email !== undefined) {
       const email = this.normalizeEmail(input.email);
       if (email !== existing.email) {
@@ -124,6 +142,10 @@ export class UsersService {
         if (clash) throw new BadRequestException('email is already registered');
       }
       data.email = email;
+    }
+
+    if (input.phone !== undefined) {
+      data.phone = this.normalizePhone(input.phone);
     }
 
     if (input.role !== undefined) {
@@ -211,6 +233,29 @@ export class UsersService {
     const value = email?.trim().toLowerCase();
     if (!value || !value.includes('@')) {
       throw new BadRequestException('a valid email is required');
+    }
+    return value;
+  }
+
+  private normalizeName(name?: string) {
+    const value = name?.trim();
+    if (!value) {
+      throw new BadRequestException('name is required');
+    }
+    return value;
+  }
+
+  private normalizePhone(phone?: string) {
+    const value = phone?.trim();
+    if (!value) {
+      throw new BadRequestException(
+        'phone is required; it becomes the temporary password until first login',
+      );
+    }
+    if (value.length < 8) {
+      throw new BadRequestException(
+        'phone must be at least 8 characters (used as the temporary password)',
+      );
     }
     return value;
   }

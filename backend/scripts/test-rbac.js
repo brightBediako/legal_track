@@ -61,15 +61,17 @@ function expect(label, actual, allowed) {
   const admin = await login(ADMIN_EMAIL, ADMIN_PASSWORD);
 
   const lawyerUser = await request('POST', '/users', admin, {
+    name: `Lawyer ${stamp}`,
     email: lawyerEmail,
-    password: tempPassword,
+    phone: '0200000001',
     role: 'lawyer',
   });
   if (!expect('admin create lawyer', lawyerUser.status, [200, 201])) failed += 1;
 
   const clerkUser = await request('POST', '/users', admin, {
+    name: `Clerk ${stamp}`,
     email: clerkEmail,
-    password: tempPassword,
+    phone: '0200000002',
     role: 'clerk',
   });
   if (!expect('admin create clerk', clerkUser.status, [200, 201])) failed += 1;
@@ -78,8 +80,24 @@ function expect(label, actual, allowed) {
     name: `RBAC Test Client ${stamp}`,
     email: clientEmail,
     phone: clientPhone,
+    location: 'Accra',
   });
   if (!expect('admin register client+portal', clientCreate.status, [200, 201])) failed += 1;
+
+  // Staff must change password before other API use
+  const lawyerLogin = await login(lawyerEmail, '0200000001');
+  const lawyerPw = await request('POST', '/users/me/password', lawyerLogin, {
+    currentPassword: '0200000001',
+    newPassword: tempPassword,
+  });
+  if (!expect('lawyer change temp password', lawyerPw.status, [200, 201])) failed += 1;
+
+  const clerkLogin = await login(clerkEmail, '0200000002');
+  const clerkPw = await request('POST', '/users/me/password', clerkLogin, {
+    currentPassword: '0200000002',
+    newPassword: tempPassword,
+  });
+  if (!expect('clerk change temp password', clerkPw.status, [200, 201])) failed += 1;
 
   const lawyer = await login(lawyerEmail, tempPassword);
   const clerk = await login(clerkEmail, tempPassword);

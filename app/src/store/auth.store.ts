@@ -12,6 +12,7 @@ type AuthState = {
   accessToken: string | null;
   refreshToken: string | null;
   user: AuthUser | null;
+  hydrated: boolean;
   setSession: (input: {
     accessToken: string;
     refreshToken?: string | null;
@@ -26,6 +27,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   accessToken: null,
   refreshToken: null,
   user: null,
+  hydrated: false,
 
   setSession: ({ accessToken, refreshToken, user }) => {
     localStorage.setItem('accessToken', accessToken);
@@ -37,6 +39,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       accessToken,
       refreshToken: refreshToken ?? localStorage.getItem('refreshToken'),
       user,
+      hydrated: true,
     });
   },
 
@@ -52,7 +55,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-    set({ accessToken: null, refreshToken: null, user: null });
+    set({ accessToken: null, refreshToken: null, user: null, hydrated: true });
   },
 
   hydrateFromStorage: () => {
@@ -64,6 +67,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       accessToken,
       refreshToken,
       user: accessToken || refreshToken ? user : null,
+      hydrated: true,
     });
   },
 }));

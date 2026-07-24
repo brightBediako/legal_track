@@ -8,8 +8,11 @@ import { useAuthStore } from '../../../store/auth.store';
 
 type UserItem = {
   id: string;
+  name?: string | null;
   email: string;
+  phone?: string | null;
   role: string;
+  mustChangePassword?: boolean;
 };
 
 export default function NewUserPage() {
@@ -32,11 +35,12 @@ export default function NewUserPage() {
 
     try {
       const form = new FormData(e.currentTarget);
+      const name = String(form.get('name') ?? '');
       const email = String(form.get('email') ?? '');
-      const password = String(form.get('password') ?? '');
+      const phone = String(form.get('phone') ?? '');
       const role = String(form.get('role') ?? 'clerk');
 
-      const created = await apiPost<UserItem>('/users', { email, password, role });
+      const created = await apiPost<UserItem>('/users', { name, email, phone, role });
       router.push(`/users/${created.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create user');
@@ -65,25 +69,28 @@ export default function NewUserPage() {
           className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
         >
           <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
-            Client portal accounts are created automatically when you register a client — not from
-            this screen.
+            Staff sign in with their <span className="font-medium">email</span>. The{' '}
+            <span className="font-medium">phone number is the temporary password</span> and must be
+            changed on first login. Client portal accounts are created when registering a client.
           </p>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Name</span>
+            <input name="name" className="app-input" placeholder="Full name" required />
+          </label>
 
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium">Email</span>
             <input type="email" name="email" className="app-input" required />
+            <span className="text-xs text-zinc-500">Login username</span>
           </label>
 
           <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Temporary password</span>
-            <input
-              type="password"
-              name="password"
-              className="app-input"
-              minLength={8}
-              required
-            />
-            <span className="text-xs text-zinc-500">At least 8 characters</span>
+            <span className="text-sm font-medium">Phone</span>
+            <input name="phone" className="app-input" placeholder="0244123456" minLength={8} required />
+            <span className="text-xs text-zinc-500">
+              Temporary password (at least 8 characters)
+            </span>
           </label>
 
           <label className="flex flex-col gap-2">

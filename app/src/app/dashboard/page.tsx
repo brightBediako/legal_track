@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AppShell } from '../../components/layout/AppShell';
-import { apiGet, apiLogout } from '../../lib/api';
+import { apiGet } from '../../lib/api';
 import { useAuthStore } from '../../store/auth.store';
 
 type DashboardSummary = {
@@ -66,12 +66,6 @@ type SearchResult = {
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
-  const clear = useAuthStore((s) => s.clear);
-
-  async function onSignOut() {
-    await apiLogout();
-    clear();
-  }
 
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -149,24 +143,7 @@ export default function DashboardPage() {
             ? 'Your assigned matters and upcoming dates'
             : 'What needs attention today'
       }
-      actions={
-        user ? (
-          <button type="button" onClick={onSignOut} className="app-btn-muted">
-            Sign out
-          </button>
-        ) : (
-          <a href="/login" className="app-btn-muted">
-            Sign in
-          </a>
-        )
-      }
     >
-      {!user ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          Sign in to view your dashboard.
-        </p>
-      ) : null}
-
       {canView ? (
         <div className="flex flex-col gap-6">
           <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">

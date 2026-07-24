@@ -1,3 +1,5 @@
+import { useAuthStore } from '../store/auth.store';
+
 type ApiError = {
   message?: string;
 };
@@ -38,12 +40,30 @@ function persistSession(data: AuthSessionResponse) {
   if (data.refreshToken) {
     localStorage.setItem('refreshToken', data.refreshToken);
   }
+  useAuthStore.getState().setSession({
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken,
+    user: data.user,
+  });
 }
 
 function clearSessionStorage() {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   localStorage.removeItem('user');
+}
+
+function clearClientAuth() {
+  clearSessionStorage();
+  useAuthStore.getState().clear();
+}
+
+function redirectToLogin() {
+  if (typeof window === 'undefined') return;
+  const { pathname, search } = window.location;
+  if (pathname.startsWith('/login')) return;
+  const next = encodeURIComponent(`${pathname}${search}` || '/dashboard');
+  window.location.assign(`/login?next=${next}`);
 }
 
 function buildHeaders(init?: HeadersInit, options?: { json?: boolean; auth?: boolean }): Headers {
@@ -92,14 +112,14 @@ async function tryRefreshSession(): Promise<boolean> {
           body: JSON.stringify({ refreshToken }),
         });
         if (!res.ok) {
-          clearSessionStorage();
+          clearClientAuth();
           return false;
         }
         const data = (await res.json()) as AuthSessionResponse;
         persistSession(data);
         return true;
       } catch {
-        clearSessionStorage();
+        clearClientAuth();
         return false;
       } finally {
         refreshInFlight = null;
@@ -126,7 +146,10 @@ async function requestWithAuth(
   }
 
   const refreshed = await tryRefreshSession();
-  if (!refreshed) return res;
+  if (!refreshed) {
+    redirectToLogin();
+    return res;
+  }
 
   const retryHeaders = buildHeaders(init.headers, {
     auth: true,
@@ -157,6 +180,8 @@ export async function apiGetBlob(urlOrPath: string): Promise<Blob> {
           method: 'GET',
           headers: buildHeaders(undefined, { auth: true }),
         });
+      } else {
+        redirectToLogin();
       }
     }
   } else {
@@ -226,6 +251,6 @@ export async function apiLogout(): Promise<void> {
       });
     }
   } finally {
-    clearSessionStorage();
+    clearClientAuth();
   }
 }

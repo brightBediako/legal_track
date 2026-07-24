@@ -8,7 +8,9 @@ import { useAuthStore } from '../../../store/auth.store';
 
 type UserDetail = {
   id: string;
+  name?: string | null;
   email: string;
+  phone?: string | null;
   role: string;
   clientId?: string | null;
   mustChangePassword?: boolean;
@@ -25,7 +27,9 @@ export default function UserDetailPage() {
   const isAdmin = authUser?.role === 'admin';
 
   const [item, setItem] = useState<UserDetail | null>(null);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [role, setRole] = useState('clerk');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(true);
@@ -49,7 +53,9 @@ export default function UserDetailPage() {
         setError(null);
         const data = await apiGet<UserDetail>(`/users/${id}`);
         setItem(data);
+        setName(data.name ?? '');
         setEmail(data.email);
+        setPhone(data.phone ?? '');
         setRole(data.role);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load user');
@@ -67,7 +73,13 @@ export default function UserDetailPage() {
     setError(null);
     setSuccess(null);
     try {
-      const body: { email: string; role: string; password?: string } = { email, role };
+      const body: {
+        name: string;
+        email: string;
+        phone: string;
+        role: string;
+        password?: string;
+      } = { name, email, phone, role };
       if (password.trim()) body.password = password.trim();
       const updated = await apiPatch<UserDetail>(`/users/${id}`, body);
       setItem(updated);
@@ -84,8 +96,8 @@ export default function UserDetailPage() {
 
   return (
     <AppShell
-      title={item?.email ?? 'User'}
-      subtitle="Staff role assignment and password reset"
+      title={item?.name || item?.email || 'User'}
+      subtitle="Staff profile, role assignment, and password reset"
       actions={
         <a className="app-btn-muted" href="/users">
           Back to users
@@ -124,8 +136,22 @@ export default function UserDetailPage() {
             ) : (
               'Clients'
             )}
-            . The client changes their own password on first login.
+            .
           </p>
+          <dl className="mt-4 space-y-2 text-sm">
+            <div>
+              <dt className="text-zinc-500">Name</dt>
+              <dd className="font-medium text-zinc-900">{item.name ?? '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-zinc-500">Email</dt>
+              <dd className="font-medium text-zinc-900">{item.email}</dd>
+            </div>
+            <div>
+              <dt className="text-zinc-500">Phone</dt>
+              <dd className="font-medium text-zinc-900">{item.phone ?? '—'}</dd>
+            </div>
+          </dl>
           {item.mustChangePassword ? (
             <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               Password change still required on next login.
@@ -140,12 +166,33 @@ export default function UserDetailPage() {
           className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
         >
           <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Name</span>
+            <input
+              className="app-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </label>
+
+          <label className="flex flex-col gap-2">
             <span className="text-sm font-medium">Email</span>
             <input
               type="email"
               className="app-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </label>
+
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Phone</span>
+            <input
+              className="app-input"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              minLength={8}
               required
             />
           </label>
@@ -170,6 +217,12 @@ export default function UserDetailPage() {
               placeholder="Leave blank to keep current"
             />
           </label>
+
+          {item.mustChangePassword ? (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              User still needs to change their temporary (phone) password on next login.
+            </p>
+          ) : null}
 
           <p className="text-xs text-zinc-500">
             Created {new Date(item.createdAt).toLocaleString()} · Updated{' '}

@@ -7,7 +7,9 @@ import { useAuthStore } from '../../store/auth.store';
 
 type UserItem = {
   id: string;
+  name?: string | null;
   email: string;
+  phone?: string | null;
   role: string;
   createdAt: string;
 };
@@ -88,12 +90,12 @@ export default function UsersPage() {
         <>
           <div className="mb-4 grid max-w-2xl gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium">Search email</span>
+              <span className="text-sm font-medium">Search</span>
               <input
                 className="app-input"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="admin@…"
+                placeholder="Name, email, or phone"
               />
             </label>
             <label className="flex flex-col gap-2">
@@ -120,7 +122,9 @@ export default function UsersPage() {
             <table className="w-full table-auto">
               <thead className="bg-zinc-50 text-left text-sm text-zinc-600">
                 <tr>
+                  <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Email</th>
+                  <th className="px-4 py-3 font-medium">Phone</th>
                   <th className="px-4 py-3 font-medium">Role</th>
                   <th className="px-4 py-3 font-medium">Created</th>
                 </tr>
@@ -128,7 +132,7 @@ export default function UsersPage() {
               <tbody className="text-sm">
                 {!loading && users.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-3 text-zinc-600" colSpan={3}>
+                    <td className="px-4 py-3 text-zinc-600" colSpan={5}>
                       No users found.
                     </td>
                   </tr>
@@ -140,9 +144,11 @@ export default function UsersPage() {
                           className="text-zinc-900 underline-offset-2 hover:underline"
                           href={`/users/${u.id}`}
                         >
-                          {u.email}
+                          {u.name || u.email}
                         </a>
                       </td>
+                      <td className="px-4 py-3 text-zinc-700">{u.email}</td>
+                      <td className="px-4 py-3 text-zinc-700">{u.phone ?? '—'}</td>
                       <td className="px-4 py-3 text-zinc-700">{u.role}</td>
                       <td className="px-4 py-3 text-zinc-700">
                         {new Date(u.createdAt).toLocaleString()}

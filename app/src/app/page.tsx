@@ -1,6 +1,36 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useAuthStore } from '../store/auth.store';
 
 export default function Home() {
+  const router = useRouter();
+  const hydrate = useAuthStore((s) => s.hydrateFromStorage);
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const user = useAuthStore((s) => s.user);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (accessToken && user) {
+      router.replace(user.mustChangePassword ? '/account' : '/dashboard');
+    }
+  }, [hydrated, accessToken, user, router]);
+
+  if (!hydrated || (accessToken && user)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-zinc-600">
+        Loading…
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
       <main className="w-full max-w-xl rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
@@ -12,9 +42,6 @@ export default function Home() {
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Link href="/login" className="app-btn-primary">
             Sign in
-          </Link>
-          <Link href="/dashboard" className="app-btn-muted">
-            Open dashboard
           </Link>
         </div>
       </main>

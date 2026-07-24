@@ -11,6 +11,7 @@ type Client = {
   name: string;
   email?: string | null;
   phone?: string | null;
+  location?: string | null;
   portalAccount?: {
     email: string;
     temporaryPassword: string;
@@ -39,11 +40,13 @@ export default function NewClientPage() {
       const name = String(form.get('name') || '');
       const email = String(form.get('email') || '');
       const phone = String(form.get('phone') || '');
+      const location = String(form.get('location') || '');
 
       const created = await apiPost<Client>('/clients', {
         name,
         email,
         phone,
+        location,
       });
 
       router.push(`/clients/${created.id}?portal=1`);
@@ -77,7 +80,7 @@ export default function NewClientPage() {
 
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">Name</span>
-          <input name="name" className="app-input" placeholder="Client name" required />
+          <input name="name" className="app-input" placeholder="Client full name" required />
         </label>
 
         <label className="flex flex-col gap-2">
@@ -104,6 +107,16 @@ export default function NewClientPage() {
           <span className="text-xs text-zinc-500">
             Temporary password (at least 8 characters). Share this with the client.
           </span>
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Location</span>
+          <input
+            name="location"
+            className="app-input"
+            placeholder="City, region, or address"
+            required
+          />
         </label>
 
         {error ? (

@@ -27,12 +27,15 @@ type ClientDetail = {
   name: string;
   email?: string | null;
   phone?: string | null;
+  location?: string | null;
   isActive: boolean;
   createdAt: string;
   cases: LinkedCase[];
   portalUser?: {
     id: string;
     email: string;
+    name?: string | null;
+    phone?: string | null;
     mustChangePassword: boolean;
     createdAt?: string;
   } | null;
@@ -52,6 +55,7 @@ export default function ClientDetailPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [location, setLocation] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,6 +81,7 @@ export default function ClientDetailPage() {
         setName(data.name);
         setEmail(data.email ?? '');
         setPhone(data.phone ?? '');
+        setLocation(data.location ?? '');
         setIsActive(data.isActive);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load client');
@@ -97,6 +102,7 @@ export default function ClientDetailPage() {
         name,
         email,
         phone,
+        location,
         isActive,
       });
       setClient((prev) => (prev ? { ...prev, ...updated, cases: prev.cases } : prev));
@@ -192,6 +198,16 @@ export default function ClientDetailPage() {
               <span className="text-xs text-zinc-500">
                 Temporary password at registration (changing phone here does not reset the password)
               </span>
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium">Location</span>
+              <input
+                className="app-input"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                required
+              />
             </label>
 
             {client.portalUser ? (
