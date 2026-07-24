@@ -1,13 +1,17 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppShell } from '../../components/layout/AppShell';
 import { apiPost } from '../../lib/api';
 import { useAuthStore } from '../../store/auth.store';
 
 export default function AccountPage() {
+  const router = useRouter();
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
   const user = useAuthStore((s) => s.user);
+  const patchUser = useAuthStore((s) => s.patchUser);
+  const mustChange = Boolean(user?.mustChangePassword);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -31,14 +35,18 @@ export default function AccountPage() {
 
     setSubmitting(true);
     try {
-      await apiPost<{ ok: boolean }>('/users/me/password', {
+      await apiPost<{ ok: boolean; mustChangePassword?: boolean }>('/users/me/password', {
         currentPassword,
         newPassword,
       });
+      patchUser({ mustChangePassword: false });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setSuccess('Password updated.');
+      if (mustChange) {
+        window.setTimeout(() => router.push('/dashboard'), 600);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to change password');
     } finally {
@@ -49,11 +57,13 @@ export default function AccountPage() {
   return (
     <AppShell
       title="Account"
-      subtitle="Change your password"
+      subtitle={mustChange ? 'Update your temporary password to continue' : 'Change your password'}
       actions={
-        <a className="app-btn-muted" href="/dashboard">
-          Dashboard
-        </a>
+        mustChange ? undefined : (
+          <a className="app-btn-muted" href="/dashboard">
+            Dashboard
+          </a>
+        )
       }
     >
       {!user ? (
@@ -65,6 +75,13 @@ export default function AccountPage() {
           onSubmit={onSubmit}
           className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
         >
+          {mustChange ? (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              First login: your temporary password is the phone number on your client profile. Choose
+              a new password (at least 8 characters) before continuing.
+            </p>
+          ) : null}
+
           <p className="text-sm text-zinc-600">
             Signed in as <span className="font-medium text-zinc-900">{user.email}</span> ({user.role})
           </p>
@@ -77,6 +94,7 @@ export default function AccountPage() {
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
+              autoComplete="current-password"
             />
           </label>
 
@@ -89,6 +107,7 @@ export default function AccountPage() {
               onChange={(e) => setNewPassword(e.target.value)}
               minLength={8}
               required
+              autoComplete="new-password"
             />
           </label>
 
@@ -101,6 +120,7 @@ export default function AccountPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               minLength={8}
               required
+              autoComplete="new-password"
             />
           </label>
 
@@ -117,7 +137,7 @@ export default function AccountPage() {
           ) : null}
 
           <button type="submit" disabled={submitting} className="app-btn-primary mt-2">
-            {submitting ? 'Saving…' : 'Update password'}
+            {submitting ? 'Saving…' : mustChange ? 'Set new password' : 'Update password'}
           </button>
         </form>
       )}

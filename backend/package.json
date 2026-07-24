@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "dev:backend": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "start:prod": "node dist/main.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
@@ -14,7 +17,7 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:status": "prisma migrate status",
     "db:ensure": "node scripts/ensure-db.js",
-    "db:seed:rbac": "node scripts/seed-rbac-users.js",
+    "db:seed:admin": "node scripts/seed-admin.js",
     "test:rbac": "node scripts/test-rbac.js",
     "test:audit": "node scripts/test-audit.js"
   },

@@ -5,4 +5,5 @@ export type UpdateCaseDto = {
   notes?: string | null;
   courtDate?: string | null;
   clientId?: string | null;
+  assigneeId?: string | null;
 };

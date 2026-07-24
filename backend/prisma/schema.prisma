@@ -25,12 +25,29 @@ model User {
   role     Role
   clientId String? @unique
   client   Client? @relation(fields: [clientId], references: [id])
+  mustChangePassword Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   appointmentsCreated Appointment[]
   notifications       Notification[]
+  assignedCases       Case[] @relation("CaseAssignee")
+  timelineEvents      CaseTimelineEvent[]
+  refreshTokens       RefreshToken[]
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Client {
@@ -58,24 +75,57 @@ model Case {
 
   clientId String?
   client   Client? @relation(fields: [clientId], references: [id])
+
+  assigneeId String?
+  assignee   User?   @relation("CaseAssignee", fields: [assigneeId], references: [id])
+
   documents Document[]
   appointments Appointment[]
+  timelineEvents CaseTimelineEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([assigneeId])
+}
+
+model CaseTimelineEvent {
+  id          String  @id @default(uuid())
+  caseId      String
+  case        Case    @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  type        String  // created | status_change | assignment | note | court_date | update
+  title       String
+  body        String?
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([caseId, createdAt])
 }
 
 model Document {
-  id        String @id @default(uuid())
-  case      Case?   @relation(fields: [caseId], references: [id])
-  caseId    String?
-  filename  String
-  url       String
-  provider  String   // 'cloudinary' | 's3'
+  id          String  @id @default(uuid())
+  case        Case?   @relation(fields: [caseId], references: [id])
+  caseId      String?
+  filename    String
+  url         String
+  provider    String // 'local' | 'cloudinary' | 's3'
   providerKey String?
+  category    String  @default("other") // pleading | evidence | correspondence | contract | identity | other
+  version     Int     @default(1)
+  isLatest    Boolean @default(true)
+  rootDocumentId String?
+  rootDocument   Document?  @relation("DocumentVersions", fields: [rootDocumentId], references: [id])
+  versions       Document[] @relation("DocumentVersions")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([caseId])
+  @@index([category])
+  @@index([rootDocumentId])
+  @@index([isLatest])
 }
 
 model Appointment {
@@ -123,4 +173,13 @@ model AuditLog {
   userId    String?
   metadata  Json?
   createdAt DateTime @default(now())
+}
+
+model SystemSettings {
+  id           String  @id @default("default")
+  firmName     String  @default("LegalTrack")
+  supportEmail String?
+  supportPhone String?
+  timezone     String  @default("Africa/Accra")
+  updatedAt    DateTime @updatedAt
 }

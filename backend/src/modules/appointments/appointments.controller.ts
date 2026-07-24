@@ -47,7 +47,7 @@ export class AppointmentsController {
   @Post()
   @Roles(Role.admin, Role.lawyer, Role.clerk)
   async create(@Body() body: CreateAppointmentDto, @CurrentUser() user?: AuthUserPayload) {
-    return this.appointmentsService.create(body, user?.sub);
+    return this.appointmentsService.create(body, user?.sub, user?.role);
   }
 
   @Patch(':id')
@@ -57,6 +57,6 @@ export class AppointmentsController {
     @Body() body: UpdateAppointmentDto,
     @CurrentUser() user?: AuthUserPayload,
   ) {
-    return this.appointmentsService.update(id, body, user?.sub);
+    return this.appointmentsService.update(id, body, user?.sub, user?.role);
   }
 }

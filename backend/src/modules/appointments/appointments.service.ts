@@ -35,6 +35,7 @@ export class AppointmentsService {
       caseId?: string;
     },
     actorUserId?: string,
+    actorRole?: string,
   ) {
     const title = input.title?.trim();
     if (!title) throw new BadRequestException('title is required');
@@ -51,6 +52,30 @@ export class AppointmentsService {
     const clientId = input.clientId?.trim() || undefined;
     const caseId = input.caseId?.trim() || undefined;
     await this.assertClientAndCase(clientId, caseId);
+
+    if (this.portal.isLawyerRole(actorRole) && actorUserId) {
+      if (caseId) {
+        await this.portal.assertCaseAccess({
+          userId: actorUserId,
+          role: actorRole,
+          caseId,
+        });
+      } else if (clientId) {
+        const allowed = await this.prisma.case.findFirst({
+          where: { clientId, assigneeId: actorUserId },
+          select: { id: true },
+        });
+        if (!allowed) {
+          throw new BadRequestException(
+            'lawyers can only schedule for clients on their assigned cases',
+          );
+        }
+      } else {
+        throw new BadRequestException(
+          'lawyers must link an assigned case (or its client) when scheduling',
+        );
+      }
+    }
 
     const created = await this.prisma.appointment.create({
       data: {
@@ -115,9 +140,8 @@ export class AppointmentsService {
       if (query.to) where.startsAt.lte = this.parseDate(query.to, 'to');
     }
 
-    if (this.portal.isClientRole(actor?.role) && actor?.userId) {
-      where.clientId = await this.portal.requireLinkedClientId(actor.userId);
-    }
+    const scoped = await this.portal.appointmentWhereForActor(actor);
+    if (scoped) Object.assign(where, scoped);
 
     return this.prisma.appointment.findMany({
       where,
@@ -156,7 +180,16 @@ export class AppointmentsService {
       caseId?: string | null;
     },
     actorUserId?: string,
+    actorRole?: string,
   ) {
+    if (actorUserId) {
+      await this.portal.assertAppointmentAccess({
+        userId: actorUserId,
+        role: actorRole,
+        appointmentId: id,
+      });
+    }
+
     const existing = await this.prisma.appointment.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('appointment not found');
 

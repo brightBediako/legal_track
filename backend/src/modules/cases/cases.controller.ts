@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -15,6 +16,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { CasesService } from './cases.service';
 import { CreateCaseDto } from './dto/create-case.dto';
+import { CreateTimelineEventDto } from './dto/create-timeline-event.dto';
 import { UpdateCaseDto } from './dto/update-case.dto';
 
 @Controller('cases')
@@ -27,9 +29,13 @@ export class CasesController {
   async list(
     @Query('q') q?: string,
     @Query('status') status?: string,
+    @Query('assigneeId') assigneeId?: string,
     @CurrentUser() user?: AuthUserPayload,
   ) {
-    return this.casesService.list({ q, status }, { userId: user?.sub, role: user?.role });
+    return this.casesService.list(
+      { q, status, assigneeId },
+      { userId: user?.sub, role: user?.role },
+    );
   }
 
   @Get(':id')
@@ -41,7 +47,7 @@ export class CasesController {
   @Post()
   @Roles(Role.admin, Role.lawyer, Role.clerk)
   async create(@Body() body: CreateCaseDto, @CurrentUser() user?: AuthUserPayload) {
-    return this.casesService.create(body, user?.sub);
+    return this.casesService.create(body, user?.sub, user?.role);
   }
 
   @Patch(':id')
@@ -51,6 +57,22 @@ export class CasesController {
     @Body() body: UpdateCaseDto,
     @CurrentUser() user?: AuthUserPayload,
   ) {
-    return this.casesService.update(id, body, user?.sub);
+    return this.casesService.update(id, body, user?.sub, user?.role);
+  }
+
+  @Delete(':id')
+  @Roles(Role.admin)
+  async remove(@Param('id') id: string, @CurrentUser() user?: AuthUserPayload) {
+    return this.casesService.remove(id, user?.sub);
+  }
+
+  @Post(':id/timeline')
+  @Roles(Role.admin, Role.lawyer, Role.clerk)
+  async addTimelineNote(
+    @Param('id') id: string,
+    @Body() body: CreateTimelineEventDto,
+    @CurrentUser() user?: AuthUserPayload,
+  ) {
+    return this.casesService.addNote(id, body, { userId: user?.sub, role: user?.role });
   }
 }

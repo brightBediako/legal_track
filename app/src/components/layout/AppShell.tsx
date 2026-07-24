@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode, SVGProps } from 'react';
 import { useAuthStore } from '../../store/auth.store';
@@ -23,6 +23,7 @@ const baseNavItems: NavItem[] = [
   { href: '/documents', label: 'Documents', icon: DocumentsIcon },
   { href: '/notifications', label: 'Notifications', icon: NotificationsIcon },
   { href: '/users', label: 'Users', icon: UsersIcon, adminOnly: true },
+  { href: '/settings', label: 'Settings', icon: SettingsIcon, adminOnly: true },
   { href: '/audit', label: 'Audit', icon: AuditIcon, adminOnly: true },
   { href: '/account', label: 'Account', icon: AccountIcon },
 ];
@@ -105,6 +106,20 @@ function AuditIcon(props: Readonly<IconProps>) {
   );
 }
 
+function SettingsIcon(props: Readonly<IconProps>) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
+      <circle cx="10" cy="10" r="2.75" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M10 2.75v1.5M10 15.75v1.5M2.75 10h1.5M15.75 10h1.5M4.6 4.6l1.06 1.06M14.34 14.34l1.06 1.06M4.6 15.4l1.06-1.06M14.34 5.66l1.06-1.06"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function AccountIcon(props: Readonly<IconProps>) {
   return (
     <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
@@ -122,6 +137,7 @@ const breadcrumbLabels: Record<string, string> = {
   documents: 'Documents',
   notifications: 'Notifications',
   users: 'Users',
+  settings: 'Settings',
   audit: 'Audit',
   account: 'Account',
   upload: 'Upload',
@@ -138,6 +154,7 @@ type AppShellProps = {
 
 export function AppShell({ title, subtitle, actions, children }: Readonly<AppShellProps>) {
   const pathname = usePathname();
+  const router = useRouter();
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
   const authUser = useAuthStore((s) => s.user);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -146,13 +163,20 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
   const firstSegment = segments.find(() => true) ?? 'dashboard';
   const isAdmin = authUser?.role === 'admin';
   const isClient = authUser?.role === 'client';
+  const mustChangePassword = Boolean(authUser?.mustChangePassword);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
   useEffect(() => {
-    if (!authUser) {
+    if (!mustChangePassword) return;
+    if (pathname === '/account') return;
+    router.replace('/account');
+  }, [mustChangePassword, pathname, router]);
+
+  useEffect(() => {
+    if (!authUser || mustChangePassword) {
       setUnreadCount(0);
       return;
     }
@@ -174,7 +198,7 @@ export function AppShell({ title, subtitle, actions, children }: Readonly<AppShe
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [authUser?.id, pathname]);
+  }, [authUser?.id, pathname, mustChangePassword]);
 
   const navItems = useMemo(
     () =>

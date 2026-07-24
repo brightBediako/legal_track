@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { AppShell } from '../../components/layout/AppShell';
-import { apiGet } from '../../lib/api';
+import { apiGet, apiLogout } from '../../lib/api';
 import { useAuthStore } from '../../store/auth.store';
 
 type DashboardSummary = {
-  scope?: 'staff' | 'client';
+  scope?: 'staff' | 'client' | 'lawyer';
   metrics: {
     clientsActive: number;
     clientsInactive: number;
@@ -67,6 +67,11 @@ export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
   const clear = useAuthStore((s) => s.clear);
+
+  async function onSignOut() {
+    await apiLogout();
+    clear();
+  }
 
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -137,10 +142,16 @@ export default function DashboardPage() {
   return (
     <AppShell
       title="Dashboard"
-      subtitle={isClient ? 'Your cases, documents, and upcoming dates' : 'What needs attention today'}
+      subtitle={
+        isClient
+          ? 'Your cases, documents, and upcoming dates'
+          : user?.role === 'lawyer'
+            ? 'Your assigned matters and upcoming dates'
+            : 'What needs attention today'
+      }
       actions={
         user ? (
-          <button type="button" onClick={clear} className="app-btn-muted">
+          <button type="button" onClick={onSignOut} className="app-btn-muted">
             Sign out
           </button>
         ) : (

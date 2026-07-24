@@ -3,6 +3,7 @@ export type CreateCaseDto = {
   description?: string;
   status: string;
   clientId?: string;
+  assigneeId?: string;
   notes?: string;
   courtDate?: string;
 };

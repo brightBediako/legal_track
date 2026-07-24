@@ -2,7 +2,10 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -20,6 +23,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { throttleEnv } from '../../common/throttle.config';
 import { assertAllowedDocumentFile } from '../../documents/allowed-file-types';
 import { DocumentsService } from './documents.service';
+import { UpdateDocumentDto } from './dto/update-document.dto';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 
 const throttle = throttleEnv();
@@ -31,8 +35,35 @@ export class DocumentsController {
 
   @Get()
   @Roles(Role.admin, Role.lawyer, Role.clerk, Role.client)
-  async list(@CurrentUser() user?: AuthUserPayload) {
-    return this.documentsService.list({ userId: user?.sub, role: user?.role });
+  async list(
+    @Query('caseId') caseId?: string,
+    @Query('category') category?: string,
+    @Query('latestOnly') latestOnly?: string,
+    @CurrentUser() user?: AuthUserPayload,
+  ) {
+    return this.documentsService.list(
+      { caseId, category, latestOnly },
+      { userId: user?.sub, role: user?.role },
+    );
+  }
+
+  @Get(':id/versions')
+  @Roles(Role.admin, Role.lawyer, Role.clerk, Role.client)
+  async versions(@Param('id') id: string, @CurrentUser() user?: AuthUserPayload) {
+    return this.documentsService.listVersions(id, { userId: user?.sub, role: user?.role });
+  }
+
+  @Patch(':id')
+  @Roles(Role.admin, Role.lawyer, Role.clerk)
+  async update(
+    @Param('id') id: string,
+    @Body() body: UpdateDocumentDto,
+    @CurrentUser() user?: AuthUserPayload,
+  ) {
+    return this.documentsService.updateCategory(id, body, {
+      userId: user?.sub,
+      role: user?.role,
+    });
   }
 
   @Post('upload')
@@ -61,6 +92,8 @@ export class DocumentsController {
           originalName: file.originalname,
           provider: body.provider,
           caseId: body.caseId,
+          category: body.category,
+          replacesDocumentId: body.replacesDocumentId,
         },
         { userId: user?.sub, role: user?.role },
       );

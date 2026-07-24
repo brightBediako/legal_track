@@ -4,13 +4,14 @@ import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
 
-const ROLES: Role[] = ['admin', 'lawyer', 'clerk', 'client'];
+const STAFF_ROLES: Role[] = ['admin', 'lawyer', 'clerk'];
 const BCRYPT_ROUNDS = 10;
 const userPublicSelect = {
   id: true,
   email: true,
   role: true,
   clientId: true,
+  mustChangePassword: true,
   createdAt: true,
   updatedAt: true,
   client: { select: { id: true, name: true, email: true } },
@@ -43,6 +44,14 @@ export class UsersService {
     });
   }
 
+  async listAssignable() {
+    return this.prisma.user.findMany({
+      where: { role: { in: ['admin', 'lawyer'] } },
+      orderBy: { email: 'asc' },
+      select: { id: true, email: true, role: true },
+    });
+  }
+
   async getById(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -53,12 +62,12 @@ export class UsersService {
   }
 
   async create(
-    input: { email: string; password: string; role: string; clientId?: string | null },
+    input: { email: string; password: string; role: string },
     actorUserId?: string,
   ) {
     const email = this.normalizeEmail(input.email);
     const password = input.password;
-    const role = this.parseRole(input.role);
+    const role = this.parseStaffRole(input.role);
 
     if (!password || password.length < 8) {
       throw new BadRequestException('password must be at least 8 characters');
@@ -69,14 +78,13 @@ export class UsersService {
       throw new BadRequestException('email is already registered');
     }
 
-    const clientId = await this.resolveClientLink(role, input.clientId);
     const hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const user = await this.prisma.user.create({
       data: {
         email,
         password: hash,
         role,
-        client: clientId ? { connect: { id: clientId } } : undefined,
+        mustChangePassword: false,
       },
       select: userPublicSelect,
     });
@@ -84,7 +92,6 @@ export class UsersService {
     await this.audit.logCreate('User', user.id, actorUserId, {
       email: user.email,
       role: user.role,
-      clientId: user.clientId,
     });
 
     return user;
@@ -96,15 +103,19 @@ export class UsersService {
       email?: string;
       role?: string;
       password?: string;
-      clientId?: string | null;
     },
     actorUserId?: string,
   ) {
     const existing = await this.prisma.user.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('user not found');
 
+    if (existing.role === 'client') {
+      throw new BadRequestException(
+        'client portal accounts are managed via client registration; reset password from the account page or recreate the client',
+      );
+    }
+
     const data: Prisma.UserUpdateInput = {};
-    let nextRole = existing.role;
 
     if (input.email !== undefined) {
       const email = this.normalizeEmail(input.email);
@@ -116,7 +127,7 @@ export class UsersService {
     }
 
     if (input.role !== undefined) {
-      const role = this.parseRole(input.role);
+      const role = this.parseStaffRole(input.role);
       if (existing.role === 'admin' && role !== 'admin') {
         const adminCount = await this.prisma.user.count({ where: { role: 'admin' } });
         if (adminCount <= 1) {
@@ -124,7 +135,6 @@ export class UsersService {
         }
       }
       data.role = role;
-      nextRole = role;
     }
 
     if (input.password !== undefined) {
@@ -132,18 +142,7 @@ export class UsersService {
         throw new BadRequestException('password must be at least 8 characters');
       }
       data.password = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
-    }
-
-    if (input.clientId !== undefined || input.role !== undefined) {
-      const clientId = await this.resolveClientLink(
-        nextRole,
-        input.clientId !== undefined ? input.clientId : existing.clientId,
-      );
-      if (!clientId) {
-        data.client = { disconnect: true };
-      } else {
-        data.client = { connect: { id: clientId } };
-      }
+      data.mustChangePassword = false;
     }
 
     if (Object.keys(data).length === 0) {
@@ -159,7 +158,6 @@ export class UsersService {
     await this.audit.logUpdate('User', user.id, actorUserId, {
       email: user.email,
       role: user.role,
-      clientId: user.clientId,
       fields: Object.keys(data).map((k) => (k === 'password' ? 'password' : k)),
     });
 
@@ -179,10 +177,13 @@ export class UsersService {
     if (newPassword.length < 8) {
       throw new BadRequestException('newPassword must be at least 8 characters');
     }
+    if (newPassword === currentPassword) {
+      throw new BadRequestException('newPassword must be different from the current password');
+    }
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, password: true },
+      select: { id: true, email: true, password: true, mustChangePassword: true },
     });
     if (!user) throw new NotFoundException('user not found');
 
@@ -194,16 +195,16 @@ export class UsersService {
     const hash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
     await this.prisma.user.update({
       where: { id: userId },
-      data: { password: hash },
+      data: { password: hash, mustChangePassword: false },
     });
 
     await this.audit.logUpdate('User', user.id, userId, {
       email: user.email,
-      fields: ['password'],
+      fields: ['password', 'mustChangePassword'],
       selfService: true,
     });
 
-    return { ok: true };
+    return { ok: true, mustChangePassword: false };
   }
 
   private normalizeEmail(email: string) {
@@ -214,24 +215,22 @@ export class UsersService {
     return value;
   }
 
-  private parseRole(role: string): Role {
+  private parseStaffRole(role: string): Role {
     const value = role?.trim().toLowerCase();
-    if (!value || !(ROLES as string[]).includes(value)) {
-      throw new BadRequestException(`role must be one of: ${ROLES.join(', ')}`);
+    if (!value || !(STAFF_ROLES as string[]).includes(value)) {
+      throw new BadRequestException(
+        `role must be one of: ${STAFF_ROLES.join(', ')}. Client portal accounts are created when registering a client.`,
+      );
     }
     return value as Role;
   }
 
-  private async resolveClientLink(role: Role, clientId?: string | null) {
-    if (role !== 'client') {
-      return null;
+  private parseRole(role: string): Role {
+    const value = role?.trim().toLowerCase();
+    const all: Role[] = ['admin', 'lawyer', 'clerk', 'client'];
+    if (!value || !(all as string[]).includes(value)) {
+      throw new BadRequestException(`role must be one of: ${all.join(', ')}`);
     }
-    const id = typeof clientId === 'string' ? clientId.trim() : '';
-    if (!id) {
-      throw new BadRequestException('client role requires a linked client profile (clientId)');
-    }
-    const client = await this.prisma.client.findUnique({ where: { id } });
-    if (!client) throw new BadRequestException('client profile not found');
-    return id;
+    return value as Role;
   }
 }

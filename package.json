@@ -9,9 +9,14 @@
   "scripts": {
     "dev:app": "npm run dev --workspace app",
     "dev:backend": "npm run dev --workspace backend",
+    "build:app": "npm run build --workspace app",
+    "build:backend": "npm run build --workspace @legal-track/backend",
+    "start:app": "npm run start --workspace app",
+    "start:backend": "npm run start --workspace @legal-track/backend",
     "db:generate": "npm run db:generate --workspace @legal-track/backend",
     "db:migrate": "npm run db:migrate --workspace @legal-track/backend",
     "db:migrate:dev": "npm run db:migrate:dev --workspace @legal-track/backend",
-    "db:migrate:status": "npm run db:migrate:status --workspace @legal-track/backend"
+    "db:migrate:status": "npm run db:migrate:status --workspace @legal-track/backend",
+    "db:seed:admin": "npm run db:seed:admin --workspace @legal-track/backend"
   }
 }

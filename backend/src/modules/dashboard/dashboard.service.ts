@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PortalScopeService } from '../../common/portal-scope.service';
 import { PrismaService } from '../../database/prisma.service';
 
@@ -12,6 +13,9 @@ export class DashboardService {
   async summary(actor?: { userId?: string; role?: string }) {
     if (this.portal.isClientRole(actor?.role) && actor?.userId) {
       return this.clientSummary(actor.userId);
+    }
+    if (this.portal.isLawyerRole(actor?.role) && actor?.userId) {
+      return this.lawyerSummary(actor.userId);
     }
     return this.staffSummary();
   }
@@ -46,15 +50,23 @@ export class DashboardService {
       return { clients: [], cases };
     }
 
+    const caseScope = await this.portal.caseWhereForActor(actor);
+    const clientSearchOr = [
+      { name: { contains: term, mode: 'insensitive' as const } },
+      { email: { contains: term, mode: 'insensitive' as const } },
+      { phone: { contains: term, mode: 'insensitive' as const } },
+    ];
+    const clientWhere: Prisma.ClientWhereInput =
+      this.portal.isLawyerRole(actor?.role) && actor?.userId
+        ? {
+            cases: { some: { assigneeId: actor.userId } },
+            OR: clientSearchOr,
+          }
+        : { OR: clientSearchOr };
+
     const [clients, cases] = await Promise.all([
       this.prisma.client.findMany({
-        where: {
-          OR: [
-            { name: { contains: term, mode: 'insensitive' } },
-            { email: { contains: term, mode: 'insensitive' } },
-            { phone: { contains: term, mode: 'insensitive' } },
-          ],
-        },
+        where: clientWhere,
         take: 8,
         orderBy: { name: 'asc' },
         select: {
@@ -67,6 +79,7 @@ export class DashboardService {
       }),
       this.prisma.case.findMany({
         where: {
+          ...(caseScope ?? {}),
           OR: [
             { title: { contains: term, mode: 'insensitive' } },
             { description: { contains: term, mode: 'insensitive' } },
@@ -165,6 +178,110 @@ export class DashboardService {
       recentDocuments,
       upcomingCourtDates,
       recentCases,
+    };
+  }
+
+  private async lawyerSummary(userId: string) {
+    const now = new Date();
+    const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const assigned = { assigneeId: userId };
+
+    const [
+      clientsActive,
+      casesOpen,
+      casesPending,
+      casesClosed,
+      casesTotal,
+      documentsTotal,
+      recentDocuments,
+      upcomingCourtDates,
+      recentCases,
+      upcomingAppointments,
+    ] = await Promise.all([
+      this.prisma.client.count({
+        where: { isActive: true, cases: { some: assigned } },
+      }),
+      this.prisma.case.count({ where: { ...assigned, status: 'open' } }),
+      this.prisma.case.count({ where: { ...assigned, status: 'pending' } }),
+      this.prisma.case.count({ where: { ...assigned, status: 'closed' } }),
+      this.prisma.case.count({ where: assigned }),
+      this.prisma.document.count({ where: { case: assigned } }),
+      this.prisma.document.findMany({
+        where: { case: assigned },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          filename: true,
+          provider: true,
+          createdAt: true,
+          case: { select: { id: true, title: true } },
+        },
+      }),
+      this.prisma.case.findMany({
+        where: {
+          ...assigned,
+          courtDate: { gte: now, lte: in30Days },
+          status: { not: 'closed' },
+        },
+        orderBy: { courtDate: 'asc' },
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          courtDate: true,
+          client: { select: { id: true, name: true } },
+        },
+      }),
+      this.prisma.case.findMany({
+        where: assigned,
+        take: 5,
+        orderBy: { updatedAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          updatedAt: true,
+          client: { select: { id: true, name: true } },
+        },
+      }),
+      this.prisma.appointment.findMany({
+        where: {
+          status: 'scheduled',
+          startsAt: { gte: now },
+          OR: [
+            { case: assigned },
+            { client: { cases: { some: assigned } } },
+          ],
+        },
+        orderBy: { startsAt: 'asc' },
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          startsAt: true,
+          status: true,
+        },
+      }),
+    ]);
+
+    return {
+      scope: 'lawyer' as const,
+      metrics: {
+        clientsActive,
+        clientsInactive: 0,
+        casesOpen,
+        casesPending,
+        casesClosed,
+        casesTotal,
+        documentsTotal,
+      },
+      recentDocuments,
+      upcomingCourtDates,
+      recentCases,
+      upcomingAppointments,
     };
   }
 

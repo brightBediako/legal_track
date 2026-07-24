@@ -30,6 +30,12 @@ export class UsersController {
     return this.usersService.list({ q, role });
   }
 
+  @Get('assignable')
+  @Roles(Role.admin, Role.lawyer, Role.clerk)
+  async listAssignable() {
+    return this.usersService.listAssignable();
+  }
+
   @Post('me/password')
   @Roles(Role.admin, Role.lawyer, Role.clerk, Role.client)
   async changeOwnPassword(

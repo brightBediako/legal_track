@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -19,31 +20,40 @@ import { UpdateClientDto } from './dto/update-client.dto';
 
 @Controller('clients')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.admin, Role.lawyer, Role.clerk)
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
   @Get()
+  @Roles(Role.admin, Role.lawyer, Role.clerk)
   async list(@Query('q') q?: string) {
     return this.clientsService.list({ q });
   }
 
   @Get(':id')
+  @Roles(Role.admin, Role.lawyer, Role.clerk)
   async getById(@Param('id') id: string) {
     return this.clientsService.getById(id);
   }
 
   @Post()
+  @Roles(Role.admin, Role.lawyer, Role.clerk)
   async create(@Body() body: CreateClientDto, @CurrentUser() user?: AuthUserPayload) {
     return this.clientsService.create(body, user?.sub);
   }
 
   @Patch(':id')
+  @Roles(Role.admin, Role.lawyer, Role.clerk)
   async update(
     @Param('id') id: string,
     @Body() body: UpdateClientDto,
     @CurrentUser() user?: AuthUserPayload,
   ) {
     return this.clientsService.update(id, body, user?.sub);
+  }
+
+  @Delete(':id')
+  @Roles(Role.admin)
+  async remove(@Param('id') id: string, @CurrentUser() user?: AuthUserPayload) {
+    return this.clientsService.remove(id, user?.sub);
   }
 }

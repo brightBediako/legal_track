@@ -1,9 +1,9 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { AppShell } from '../../../components/layout/AppShell';
-import { apiGet, apiPatch } from '../../../lib/api';
+import { apiDelete, apiGet, apiPatch } from '../../../lib/api';
 import { useAuthStore } from '../../../store/auth.store';
 
 type LinkedDocument = {
@@ -30,12 +30,23 @@ type ClientDetail = {
   isActive: boolean;
   createdAt: string;
   cases: LinkedCase[];
+  portalUser?: {
+    id: string;
+    email: string;
+    mustChangePassword: boolean;
+    createdAt?: string;
+  } | null;
 };
 
 export default function ClientDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const showPortalHint = searchParams.get('portal') === '1';
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
+  const authUser = useAuthStore((s) => s.user);
+  const isAdmin = authUser?.role === 'admin';
 
   const [client, setClient] = useState<ClientDetail | null>(null);
   const [name, setName] = useState('');
@@ -44,8 +55,13 @@ export default function ClientDetailPage() {
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(
+    showPortalHint
+      ? 'Client registered. Portal login uses their email; temporary password is their phone number.'
+      : null,
+  );
 
   useEffect(() => {
     hydrate();
@@ -79,8 +95,8 @@ export default function ClientDetailPage() {
     try {
       const updated = await apiPatch<ClientDetail>(`/clients/${id}`, {
         name,
-        email: email || null,
-        phone: phone || null,
+        email,
+        phone,
         isActive,
       });
       setClient((prev) => (prev ? { ...prev, ...updated, cases: prev.cases } : prev));
@@ -89,6 +105,24 @@ export default function ClientDetailPage() {
       setError(err instanceof Error ? err.message : 'Failed to update client');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onDelete() {
+    if (!isAdmin) return;
+    const confirmed = window.confirm(
+      'Delete this client? This only works when the client has no linked cases.',
+    );
+    if (!confirmed) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await apiDelete(`/clients/${id}`);
+      router.push('/clients');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete client');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -141,13 +175,37 @@ export default function ClientDetailPage() {
                 className="app-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
+              <span className="text-xs text-zinc-500">Portal login username</span>
             </label>
 
             <label className="flex flex-col gap-2">
               <span className="text-sm font-medium">Phone</span>
-              <input className="app-input" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <input
+                className="app-input"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                minLength={8}
+                required
+              />
+              <span className="text-xs text-zinc-500">
+                Temporary password at registration (changing phone here does not reset the password)
+              </span>
             </label>
+
+            {client.portalUser ? (
+              <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
+                <p>
+                  Portal account: <span className="font-medium">{client.portalUser.email}</span>
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {client.portalUser.mustChangePassword
+                    ? 'Awaiting first-login password change'
+                    : 'Password has been updated by the client'}
+                </p>
+              </div>
+            ) : null}
 
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -157,10 +215,24 @@ export default function ClientDetailPage() {
               />
               Active client
             </label>
-
             <button type="submit" disabled={saving} className="app-btn-primary mt-2">
               {saving ? 'Saving…' : 'Save changes'}
             </button>
+
+            {isAdmin ? (
+              <button
+                type="button"
+                disabled={deleting || (client?.cases.length ?? 0) > 0}
+                onClick={onDelete}
+                className="app-btn-muted mt-2 border-red-200 text-red-700 hover:bg-red-50"
+              >
+                {deleting
+                  ? 'Deleting…'
+                  : (client?.cases.length ?? 0) > 0
+                    ? 'Delete blocked (has cases)'
+                    : 'Delete client'}
+              </button>
+            ) : null}
           </form>
 
           <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">

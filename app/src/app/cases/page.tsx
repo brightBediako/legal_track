@@ -14,18 +14,25 @@ type CaseItem = {
   courtDate?: string | null;
   clientId?: string | null;
   client?: { id: string; name: string } | null;
+  assignee?: { id: string; email: string; role: string } | null;
   createdAt: string;
 };
+
+type AssigneeOption = { id: string; email: string; role: string };
 
 export default function CasesPage() {
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
   const user = useAuthStore((s) => s.user);
   const isClient = user?.role === 'client';
+  const canFilterAssignee = user?.role === 'admin' || user?.role === 'clerk';
   const searchParams = useSearchParams();
   const initialStatus = searchParams.get('status') ?? '';
+  const initialAssigneeId = searchParams.get('assigneeId') ?? '';
   const [cases, setCases] = useState<CaseItem[]>([]);
+  const [assignees, setAssignees] = useState<AssigneeOption[]>([]);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState(initialStatus);
+  const [assigneeId, setAssigneeId] = useState(initialAssigneeId);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +42,21 @@ export default function CasesPage() {
 
   useEffect(() => {
     setStatus(initialStatus);
-  }, [initialStatus]);
+    setAssigneeId(initialAssigneeId);
+  }, [initialStatus, initialAssigneeId]);
+
+  useEffect(() => {
+    if (!canFilterAssignee) return;
+    async function loadAssignees() {
+      try {
+        const data = await apiGet<AssigneeOption[]>('/users/assignable');
+        setAssignees(data);
+      } catch {
+        setAssignees([]);
+      }
+    }
+    loadAssignees();
+  }, [canFilterAssignee]);
 
   useEffect(() => {
     async function run() {
@@ -45,6 +66,7 @@ export default function CasesPage() {
         const params = new URLSearchParams();
         if (q.trim()) params.set('q', q.trim());
         if (status) params.set('status', status);
+        if (canFilterAssignee && assigneeId) params.set('assigneeId', assigneeId);
         const qs = params.toString();
         const data = await apiGet<CaseItem[]>(`/cases${qs ? `?${qs}` : ''}`);
         setCases(data);
@@ -56,7 +78,7 @@ export default function CasesPage() {
     }
     const timer = window.setTimeout(run, 200);
     return () => window.clearTimeout(timer);
-  }, [q, status]);
+  }, [q, status, assigneeId, canFilterAssignee]);
 
   return (
     <AppShell
@@ -79,7 +101,11 @@ export default function CasesPage() {
         )
       }
     >
-      <div className="mb-4 grid max-w-2xl gap-4 sm:grid-cols-2">
+      <div
+        className={`mb-4 grid max-w-4xl gap-4 ${
+          canFilterAssignee ? 'sm:grid-cols-3' : 'sm:grid-cols-2'
+        }`}
+      >
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">Search</span>
           <input
@@ -98,6 +124,23 @@ export default function CasesPage() {
             <option value="closed">Closed</option>
           </select>
         </label>
+        {canFilterAssignee ? (
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Assignee</span>
+            <select
+              className="app-select"
+              value={assigneeId}
+              onChange={(e) => setAssigneeId(e.target.value)}
+            >
+              <option value="">All</option>
+              {assignees.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.email}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </div>
 
       {loading ? <p className="text-sm text-zinc-600">Loading…</p> : null}
@@ -115,13 +158,14 @@ export default function CasesPage() {
               <th className="px-4 py-3 font-medium">Title</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Client</th>
+              {!isClient ? <th className="px-4 py-3 font-medium">Assignee</th> : null}
               <th className="px-4 py-3 font-medium">Court date</th>
             </tr>
           </thead>
           <tbody className="text-sm">
             {!loading && cases.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-zinc-600" colSpan={4}>
+                <td className="px-4 py-3 text-zinc-600" colSpan={isClient ? 4 : 5}>
                   No cases yet.
                 </td>
               </tr>
@@ -150,6 +194,9 @@ export default function CasesPage() {
                       '—'
                     )}
                   </td>
+                  {!isClient ? (
+                    <td className="px-4 py-3 text-zinc-700">{c.assignee?.email ?? '—'}</td>
+                  ) : null}
                   <td className="px-4 py-3 text-zinc-700">
                     {c.courtDate ? new Date(c.courtDate).toLocaleDateString() : '—'}
                   </td>

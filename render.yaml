@@ -1,0 +1,64 @@
+# LegalTrack — Render Blueprint (Phase 13)
+# Docs: docs/deployment.md
+#
+# After first deploy:
+# 1. Copy DATABASE_URL from the Postgres service into the API service
+# 2. Set JWT_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD, CORS_ORIGINS
+# 3. Set NEXT_PUBLIC_API_BASE_URL on the web service to the API public URL
+# 4. Redeploy both services
+
+databases:
+  - name: legaltrack-db
+    plan: free
+
+services:
+  - type: web
+    name: legaltrack-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm install && npm run db:generate --workspace=@legal-track/backend && npm run build --workspace=@legal-track/backend
+    startCommand: npm run db:migrate --workspace=@legal-track/backend && npm run start --workspace=@legal-track/backend
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: legaltrack-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 3600s
+      - key: JWT_REFRESH_DAYS
+        value: "7"
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_FORCE_RESET
+        value: "false"
+      - key: CORS_ORIGINS
+        sync: false
+      - key: THROTTLE_TTL_MS
+        value: "60000"
+      - key: THROTTLE_LIMIT
+        value: "120"
+      - key: THROTTLE_AUTH_LIMIT
+        value: "10"
+      - key: THROTTLE_UPLOAD_LIMIT
+        value: "20"
+
+  - type: web
+    name: legaltrack-app
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm install && npm run build --workspace=app
+    startCommand: npm run start --workspace=app
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_BASE_URL
+        sync: false

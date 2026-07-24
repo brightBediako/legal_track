@@ -7,7 +7,14 @@ import { useAuthStore } from '../../../store/auth.store';
 
 type LoginResponse = {
   accessToken: string;
-  user: { id: string; email: string; role: string };
+  refreshToken?: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    clientId?: string | null;
+    mustChangePassword?: boolean;
+  };
 };
 
 export default function LoginPage() {
@@ -27,8 +34,12 @@ export default function LoginPage() {
       const password = String(form.get('password') || '');
 
       const res = await apiPost<LoginResponse>('/auth/login', { email, password }, { auth: false });
-      setSession({ accessToken: res.accessToken, user: res.user });
-      router.push('/dashboard');
+      setSession({
+        accessToken: res.accessToken,
+        refreshToken: res.refreshToken,
+        user: res.user,
+      });
+      router.push(res.user.mustChangePassword ? '/account' : '/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -80,11 +91,7 @@ export default function LoginPage() {
             </p>
           ) : null}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="app-btn-primary mt-2"
-          >
+          <button type="submit" disabled={submitting} className="app-btn-primary mt-2">
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
@@ -92,4 +99,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

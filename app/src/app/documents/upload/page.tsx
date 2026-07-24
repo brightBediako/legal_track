@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { AppShell } from '../../../components/layout/AppShell';
+import { DOCUMENT_CATEGORIES } from '../../../lib/document-categories';
 import { apiGet, apiUpload } from '../../../lib/api';
 import { useAuthStore } from '../../../store/auth.store';
 
@@ -13,9 +15,10 @@ type CaseItem = {
 type DocumentResponse = {
   id: string;
   filename: string;
-  url: string;
   provider: string;
   caseId?: string | null;
+  category: string;
+  version: number;
 };
 
 type Provider = 'local' | 'cloudinary' | 's3';
@@ -47,11 +50,16 @@ export default function UploadDocumentPage() {
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
   const user = useAuthStore((s) => s.user);
   const isClient = user?.role === 'client';
+  const searchParams = useSearchParams();
+  const initialCaseId = searchParams.get('caseId') ?? '';
+  const replacesDocumentId = searchParams.get('replacesDocumentId') ?? '';
+
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [loadingCases, setLoadingCases] = useState(true);
   const [file, setFile] = useState<File | null>(null);
   const [provider, setProvider] = useState<Provider>('local');
-  const [caseId, setCaseId] = useState<string>('');
+  const [caseId, setCaseId] = useState(initialCaseId);
+  const [category, setCategory] = useState('other');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<DocumentResponse | null>(null);
@@ -59,6 +67,10 @@ export default function UploadDocumentPage() {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  useEffect(() => {
+    setCaseId(initialCaseId);
+  }, [initialCaseId]);
 
   useEffect(() => {
     async function loadCases() {
@@ -73,6 +85,23 @@ export default function UploadDocumentPage() {
     }
     loadCases();
   }, []);
+
+  useEffect(() => {
+    if (!replacesDocumentId) return;
+    async function loadPrevious() {
+      try {
+        const versions = await apiGet<DocumentResponse[]>(
+          `/documents/${replacesDocumentId}/versions`,
+        );
+        const current = versions.find((d) => d.id === replacesDocumentId) ?? versions[0];
+        if (current?.category) setCategory(current.category);
+        if (current?.caseId) setCaseId(current.caseId);
+      } catch {
+        // keep defaults
+      }
+    }
+    loadPrevious();
+  }, [replacesDocumentId]);
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     setError(null);
@@ -102,7 +131,7 @@ export default function UploadDocumentPage() {
       return;
     }
 
-    if (isClient && !caseId) {
+    if (isClient && !caseId && !replacesDocumentId) {
       setError('Please select one of your cases for this upload.');
       return;
     }
@@ -113,7 +142,9 @@ export default function UploadDocumentPage() {
       const form = new FormData();
       form.append('file', file);
       form.append('provider', provider);
+      form.append('category', category);
       if (caseId) form.append('caseId', caseId);
+      if (replacesDocumentId) form.append('replacesDocumentId', replacesDocumentId);
 
       const data = await apiUpload<DocumentResponse>('/documents/upload', form);
       setSuccess(data);
@@ -126,7 +157,7 @@ export default function UploadDocumentPage() {
 
   return (
     <AppShell
-      title="Upload document"
+      title={replacesDocumentId ? 'Upload new version' : 'Upload document'}
       subtitle="Local upload for testing (Cloudinary/S3 optional)"
       actions={
         <div className="flex items-center gap-2">
@@ -146,6 +177,12 @@ export default function UploadDocumentPage() {
         onSubmit={onSubmit}
         className="flex max-w-xl flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm"
       >
+        {replacesDocumentId ? (
+          <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700">
+            Creating a new version of document <span className="font-medium">{replacesDocumentId}</span>.
+          </p>
+        ) : null}
+
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">File</span>
           <input
@@ -159,6 +196,22 @@ export default function UploadDocumentPage() {
           <span className="text-xs text-zinc-500">
             Allowed: png, jpeg, jpg, docx, doc, pdf, mp3, mp4
           </span>
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Category</span>
+          <select
+            className="app-select"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            disabled={Boolean(replacesDocumentId)}
+          >
+            {DOCUMENT_CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="flex flex-col gap-2">
@@ -182,8 +235,8 @@ export default function UploadDocumentPage() {
             value={caseId}
             onChange={(e) => setCaseId(e.target.value)}
             className="app-select"
-            disabled={loadingCases}
-            required={isClient}
+            disabled={loadingCases || Boolean(replacesDocumentId)}
+            required={isClient && !replacesDocumentId}
           >
             <option value="">{isClient ? 'Select a case' : 'No case'}</option>
             {cases.map((c) => (
@@ -205,13 +258,13 @@ export default function UploadDocumentPage() {
 
         {success ? (
           <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            Uploaded <span className="font-medium">{success.filename}</span> via{' '}
-            <span className="font-medium">{success.provider}</span>.
+            Uploaded <span className="font-medium">{success.filename}</span> as{' '}
+            <span className="font-medium">v{success.version}</span> ({success.category}).
           </p>
         ) : null}
 
         <button type="submit" disabled={submitting} className="app-btn-primary mt-2">
-          {submitting ? 'Uploading…' : 'Upload document'}
+          {submitting ? 'Uploading…' : replacesDocumentId ? 'Upload new version' : 'Upload document'}
         </button>
       </form>
     </AppShell>

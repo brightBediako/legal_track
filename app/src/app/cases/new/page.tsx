@@ -11,18 +11,29 @@ type Client = {
   name: string;
 };
 
+type AssigneeOption = {
+  id: string;
+  email: string;
+  role: string;
+};
+
 type CaseItem = {
   id: string;
   title: string;
   description?: string | null;
   status: string;
   clientId?: string | null;
+  assigneeId?: string | null;
 };
 
 export default function NewCasePage() {
   const router = useRouter();
   const hydrate = useAuthStore((s) => s.hydrateFromStorage);
+  const user = useAuthStore((s) => s.user);
+  const isLawyer = user?.role === 'lawyer';
+  const canAssign = user?.role === 'admin' || user?.role === 'clerk';
   const [clients, setClients] = useState<Client[]>([]);
+  const [assignees, setAssignees] = useState<AssigneeOption[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [loadingClients, setLoadingClients] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,16 +45,21 @@ export default function NewCasePage() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await apiGet<Client[]>('/clients');
-        setClients(data);
+        const clientList = await apiGet<Client[]>('/clients');
+        setClients(clientList);
+        if (canAssign) {
+          const assigneeList = await apiGet<AssigneeOption[]>('/users/assignable');
+          setAssignees(assigneeList);
+        }
       } catch {
         setClients([]);
+        setAssignees([]);
       } finally {
         setLoadingClients(false);
       }
     }
-    load();
-  }, []);
+    if (user) load();
+  }, [user, canAssign]);
 
   async function onSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,6 +72,7 @@ export default function NewCasePage() {
       const descriptionRaw = form.get('description');
       const statusRaw = form.get('status');
       const clientIdRaw = form.get('clientId');
+      const assigneeIdRaw = form.get('assigneeId');
       const notesRaw = form.get('notes');
       const courtDateRaw = form.get('courtDate');
 
@@ -63,6 +80,7 @@ export default function NewCasePage() {
       const description = typeof descriptionRaw === 'string' ? descriptionRaw : '';
       const status = typeof statusRaw === 'string' ? statusRaw : '';
       const clientId = typeof clientIdRaw === 'string' ? clientIdRaw : '';
+      const assigneeId = typeof assigneeIdRaw === 'string' ? assigneeIdRaw : '';
       const notes = typeof notesRaw === 'string' ? notesRaw : '';
       const courtDate = typeof courtDateRaw === 'string' ? courtDateRaw : '';
 
@@ -71,6 +89,7 @@ export default function NewCasePage() {
         description: description || undefined,
         status,
         clientId: clientId || undefined,
+        ...(canAssign && assigneeId ? { assigneeId } : {}),
         notes: notes || undefined,
         courtDate: courtDate || undefined,
       });
@@ -86,7 +105,7 @@ export default function NewCasePage() {
   return (
     <AppShell
       title="New case"
-      subtitle="Create and optionally assign a client"
+      subtitle="Create, assign a lawyer, and optionally link a client"
       actions={
         <a className="app-btn-muted" href="/cases">
           Back to cases
@@ -129,6 +148,29 @@ export default function NewCasePage() {
           <span className="text-sm font-medium">Notes (optional)</span>
           <textarea name="notes" className="app-textarea" placeholder="Initial notes" />
         </label>
+
+        {canAssign ? (
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium">Assigned lawyer (optional)</span>
+            <select
+              name="assigneeId"
+              className="app-select"
+              defaultValue=""
+              disabled={loadingClients}
+            >
+              <option value="">Unassigned</option>
+              {assignees.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.email} ({a.role})
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : isLawyer ? (
+          <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600">
+            New cases you create are assigned to you automatically.
+          </p>
+        ) : null}
 
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">Client (optional)</span>
